@@ -1,86 +1,97 @@
-import { IssueCard, type IssueCardProps } from "./issue-card"
+// components/issue-grid.tsx
+"use client";
 
-// Sample issue data
-const issues: IssueCardProps[] = [
-  {
-    id: "02",
-    title: "The Whispers of Winter",
-    date: "December 2022",
-    volume: 1,
-    edition: 2,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Winter Tales", "Poetry", "Short Fiction", "Essays"],
-  },
-  {
-    id: "03",
-    title: "Spring Awakening: Rebirth & Renewal",
-    date: "March 2022",
-    volume: 1,
-    edition: 3,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Spring", "Renewal", "Nature", "Prose"],
-  },
-  {
-    id: "04",
-    title: "Summer Solstice: Light & Shadow",
-    date: "June 2022",
-    volume: 1,
-    edition: 4,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Summer", "Light", "Shadow", "Flash Fiction"],
-  },
-  {
-    id: "05",
-    title: "Autumn Leaves: Transitions & Change",
-    date: "September 2022",
-    volume: 1,
-    edition: 5,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Autumn", "Change", "Transitions", "Memoir"],
-  },
-  {
-    id: "06",
-    title: "The Art of Storytelling",
-    date: "January 2021",
-    volume: 2,
-    edition: 1,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Storytelling", "Craft", "Technique", "Interviews"],
-  },
-  {
-    id: "07",
-    title: "Voices from the Margins",
-    date: "April 2021",
-    volume: 2,
-    edition: 2,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Diversity", "Inclusion", "Voices", "Perspectives"],
-  },
-  {
-    id: "08",
-    title: "The Future of Literature",
-    date: "July 2021",
-    volume: 2,
-    edition: 3,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Future", "Digital", "Innovation", "Trends"],
-  },
-  {
-    id: "09",
-    title: "Classics Reimagined",
-    date: "October 2021",
-    volume: 2,
-    edition: 4,
-    coverImage: "/placeholder.svg?height=400&width=300",
-    tags: ["Classics", "Reimagined", "Adaptation", "Homage"],
-  },
-]
+import React, { useEffect, useState } from "react";
+import { IssueCard, type IssueCardProps } from "./issue-card";
+
+interface MagazineAPIResponse {
+  id: number;
+  title: string;
+  publish_date: string;       // "YYYY-MM-DD"
+  volume_number: number;
+  season_number: number;
+  cover_image: string;        // absolute URL
+  page_images: string[];      // absolute URLs
+  pdf_file: string;           // absolute URL
+}
 
 export function IssueGrid() {
+  const [issues, setIssues] = useState<IssueCardProps[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+
+  useEffect(() => {
+    async function fetchMagazines() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/magazines/`);
+        if (!res.ok) throw new Error("Failed to fetch magazines");
+        const data = (await res.json()) as unknown;
+
+        // Handle both: array OR { results: [...] }
+        let rawList: MagazineAPIResponse[] = [];
+        if (Array.isArray(data)) {
+          rawList = data;
+        } else if (data && typeof data === "object" && "results" in (data as any)) {
+          rawList = (data as any).results;
+        } else {
+          console.warn("Unexpected API shape for /magazines/:", data);
+          rawList = [];
+        }
+
+        // Map API response into IssueCardProps
+        const mapped: IssueCardProps[] = rawList.map((mag) => {
+          // Format publish_date to "Month YYYY"
+          const dateObj = new Date(mag.publish_date);
+          const formattedDate = dateObj.toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          });
+
+          return {
+            id: mag.id.toString(),
+            title: mag.title,
+            date: formattedDate,
+            volume: mag.volume_number,
+            edition: mag.season_number,
+            coverImage: mag.cover_image,
+            tags: [],                  // No tags from API; leave empty
+            pageImages: mag.page_images,
+            pdfFile: mag.pdf_file,
+          };
+        });
+
+        setIssues(mapped);
+      } catch (err) {
+        console.error("Error fetching magazines:", err);
+        setIssues([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchMagazines();
+  }, [API_BASE_URL]);
+
+  if (loading) {
+    return (
+      <section>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="font-secondary text-2xl font-bold text-navy">
+            All Issues
+          </h2>
+          <p className="text-navy/60 font-primary">Loading issues…</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-secondary text-2xl font-bold text-navy">All Issues</h2>
+        <h2 className="font-secondary text-2xl font-bold text-navy">
+          All Issues
+        </h2>
         <p className="text-navy/60 font-primary">Showing {issues.length} issues</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -89,5 +100,5 @@ export function IssueGrid() {
         ))}
       </div>
     </section>
-  )
+  );
 }

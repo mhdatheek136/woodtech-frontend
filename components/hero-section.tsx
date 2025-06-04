@@ -2,14 +2,49 @@
 
 import type React from "react"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Book, Feather, FileText, BookOpen, Bookmark, PenTool, Quote, ArrowRight, Star, Heart } from "lucide-react"
+import FlipBookReader from "./FlipBookReader"
+
+interface Magazine {
+  id: number
+  title: string
+  publish_date: string
+  description: string
+  cover_image: string  // matches the API field
+  issue_number: string
+  volume_number: number
+  season_number: number
+  pdf_file: string
+  is_published: boolean
+  page_images: string[]
+}
 
 export function HeroSection() {
   const animationRef = useRef<HTMLDivElement>(null)
   const sparklesRef = useRef<HTMLDivElement>(null)
+
+  const [latestMagazine, setLatestMagazine] = useState<Magazine | null>(null)
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api"
+  console.log("Fetching from:", `${API_BASE_URL}/magazines/latest/`)
+  const [openMag, setOpenMag] = useState<Magazine | null>(null)
+
+  // Fetch latest magazine data
+  useEffect(() => {
+    async function fetchLatestMagazine() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/magazines/latest`)
+        if (!res.ok) throw new Error("Failed to fetch latest magazine")
+        const data = await res.json()
+        setLatestMagazine(data)
+      } catch (error) {
+        console.error("Error fetching latest magazine:", error)
+      }
+    }
+    fetchLatestMagazine()
+  }, [])
 
   useEffect(() => {
     const createFloatingElement = (
@@ -227,54 +262,61 @@ export function HeroSection() {
       </div>
 
       {/* Main content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 relative z-10">
+   <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 relative z-10">
         <div className="grid lg:grid-cols-5 gap-8 md:gap-12 lg:gap-16 items-center max-w-7xl mx-auto">
-          {/* Left Column - Magazine Display (60% width) - Order 1 on mobile */}
+          {/* Left Column - Magazine Display */}
           <div className="lg:col-span-3 order-1 lg:order-1">
             <div className="relative group">
-              {/* Magazine card with enhanced styling - real magazine edges and primary blue shadow */}
               <div className="bg-white/95 backdrop-blur-sm p-6 md:p-8 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-2 shadow-magazine-edge">
                 <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
-                  {/* Magazine cover with real magazine edges and green inner shadow */}
+                  {/* Magazine cover */}
                   <div className="relative w-full max-w-[240px] md:max-w-[280px] aspect-[210/297] overflow-hidden transform transition-transform duration-300 group-hover:scale-[1.02] shadow-magazine-inner">
-                    <Image
-                      src="/images/burrowed-cover.png"
-                      alt="Latest Issue Cover"
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                    {/* Subtle overlay for depth */}
+                    {latestMagazine ? (
+                      <Image
+                        src={latestMagazine.cover_image}
+                        alt={`Issue ${latestMagazine.issue_number} Cover`}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                    ) : (
+                      <div className="bg-gray-200 w-full h-full" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent"></div>
-
-                    {/* Magazine edge effect */}
                     <div className="absolute inset-0 border border-gray-200"></div>
                   </div>
 
                   {/* Issue details */}
                   <div className="flex-1 text-center md:text-left">
                     <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-primary font-bold mb-4 shadow-sm">
-                      Latest Issue - May 2025
+                      {latestMagazine
+                        ? `Latest Issue - ${new Date(latestMagazine.publish_date).toLocaleString("default", {
+                            month: "long",
+                            year: "numeric",
+                          })}`
+                        : "Loading..."}
                     </div>
                     <h2 className="font-secondary text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4 leading-tight">
-                      Pioneering the New Literary Revolution
+                      {latestMagazine ? latestMagazine.title : "Loading..."}
                     </h2>
                     <p className="text-primary/70 font-primary text-base md:text-lg mb-6 leading-relaxed">
-                      Where readers duel with words, houses battle for glory, and a vibrant fellowship of book lovers
-                      brings stories to life.
+                      {latestMagazine ? latestMagazine.description : "Fetching latest magazine details..."}
                     </p>
-                    <Link
-                      href="/issues/01"
-                      className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 rounded-2xl bg-accent text-white font-primary font-semibold hover:bg-accent/90 transition-all duration-300 shadow-soft hover:shadow-xl group text-sm sm:text-base w-full sm:w-auto justify-center"
-                    >
-                      Read Latest Issue
-                      <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
-                    </Link>
+                    {latestMagazine && (
+                      <button
+                        onClick={() => setOpenMag(latestMagazine)}
+                        className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 rounded-2xl bg-accent text-white font-primary font-semibold hover:bg-accent/90 transition-all duration-300 shadow-soft hover:shadow-xl group text-sm sm:text-base w-full sm:w-auto justify-center"
+                      >
+                        Read Latest Issue
+                        <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
 
           {/* Right Column - Magazine Description (40% width) - Order 2 on mobile */}
           <div className="lg:col-span-2 order-2 lg:order-2">
@@ -367,6 +409,14 @@ export function HeroSection() {
           background-size: 40px 40px;
         }
       `}</style>
+        {openMag && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <FlipBookReader
+            pages={openMag.page_images}
+            onClose={() => setOpenMag(null)}
+          />
+        </div>
+      )}
     </section>
   )
 }

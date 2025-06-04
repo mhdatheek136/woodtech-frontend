@@ -1,72 +1,163 @@
-import Link from "next/link"
-import Image from "next/image"
-import { Calendar, BookOpen, Download } from "lucide-react"
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Calendar, BookOpen, Download, ArrowRight } from "lucide-react";
+import FlipBookReader from "./FlipBookReader";
+
+interface Magazine {
+  id: number;
+  title: string;
+  publish_date: string;    // e.g. "2025-05-10"
+  description: string;
+  cover_image: string;     // absolute URL
+  issue_number: string;
+  volume_number: number;
+  season_number: number;
+  pdf_file: string;        // absolute URL to PDF
+  is_published: boolean;
+  page_images: string[];   // array of absolute URLs
+}
 
 export function FeaturedIssue() {
+  const [latestMagazine, setLatestMagazine] = useState<Magazine | null>(null);
+  const [openMag, setOpenMag] = useState<Magazine | null>(null);
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+
+  useEffect(() => {
+    async function fetchLatestMagazine() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/magazines/latest`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch latest magazine");
+        }
+        const data = (await res.json()) as Magazine;
+        setLatestMagazine(data);
+      } catch (err) {
+        console.error("Error fetching latest magazine:", err);
+      }
+    }
+    fetchLatestMagazine();
+  }, [API_BASE_URL]);
+
+  function formatPublishDate(dateString: string) {
+    const d = new Date(dateString);
+    return d.toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    });
+  }
+
   return (
     <section className="mb-12 md:mb-16">
-      <h2 className="font-secondary text-2xl font-bold text-primary mb-6">Latest Issue</h2>
+      <h2 className="font-secondary text-2xl font-bold text-primary mb-6">
+        Latest Issue
+      </h2>
+
       <div className="bg-white overflow-hidden shadow-card border border-primary/5">
         <div className="grid md:grid-cols-2 gap-6 lg:gap-12">
-          <div className="relative h-[400px] md:h-auto">
-            {/* Magazine with real edges */}
-            <div className="relative w-full h-full shadow-magazine-edge">
-              <Image
-                src="/images/burrowed-cover.png"
-                alt="Burrowed Magazine Issue 01 Cover"
-                fill
-                className="object-cover"
-              />
-
-              {/* Magazine edge effect */}
-              <div className="absolute inset-0 border border-gray-200"></div>
-
-              {/* Green inner shadow */}
-              <div className="absolute inset-0 shadow-magazine-inner"></div>
+          {/* Left Column: Cover Image at A4 Aspect Ratio with Hover Motion */}
+          <div className="flex justify-center items-center">
+            <div className="relative w-full max-w-md bg-white shadow-magazine-edge transform transition-transform duration-300 hover:-translate-y-2 hover:scale-[1.02]">
+              <div className="relative w-full aspect-[210/297] overflow-hidden">
+                {latestMagazine ? (
+                  <Image
+                    src={latestMagazine.cover_image}
+                    alt={`Cover of ${latestMagazine.title}`}
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                ) : (
+                  <div className="bg-gray-200 w-full h-full" />
+                )}
+                <div className="absolute inset-0 border border-gray-200"></div>
+                <div className="absolute inset-0 shadow-magazine-inner"></div>
+              </div>
             </div>
           </div>
+
+          {/* Right Column: Metadata & Actions */}
           <div className="p-6 md:p-8 lg:p-10 flex flex-col justify-center">
             <div className="flex items-center gap-2 text-primary/60 mb-4 font-primary text-sm">
               <Calendar className="h-4 w-4" />
-              <span>May 2023</span>
+              <span>
+                {latestMagazine
+                  ? formatPublishDate(latestMagazine.publish_date)
+                  : "Loading Date..."}
+              </span>
               <span className="mx-2">•</span>
               <BookOpen className="h-4 w-4" />
-              <span>Volume 1, Edition 1</span>
-            </div>
-            <h3 className="font-secondary text-3xl md:text-4xl font-bold text-primary mb-4">
-              Pioneering the New Literary Revolution
-            </h3>
-            <p className="text-primary/80 mb-6 font-primary leading-relaxed">
-              Woodland Publishing is setting the literary world on fire with a spellbinding Hogwarts-style
-              experience—where readers duel with words, houses battle for glory, and a vibrant fellowship of book lovers
-              brings stories to life like never before. This isn't just publishing—it's a reading revolution!
-            </p>
-            <div className="flex flex-wrap gap-3 mb-6">
-              <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-primary">Fiction</span>
-              <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-primary">Poetry</span>
-              <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-primary">Essays</span>
-              <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-primary">
-                House Championships
+              <span>
+                {latestMagazine
+                  ? `Season ${latestMagazine.season_number}, Vol. ${latestMagazine.volume_number}`
+                  : "Season • Vol"}
               </span>
             </div>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/issues/01"
-                className="inline-flex items-center px-6 py-3 rounded-2xl bg-accent text-white font-primary font-medium hover:bg-accent/90 transition-colors shadow-soft"
-              >
-                Read This Issue
-              </Link>
-              <Link
-                href="/issues/01/download"
-                className="inline-flex items-center px-6 py-3 rounded-2xl bg-white border border-primary/20 text-primary font-primary font-medium hover:bg-secondary/50 transition-colors shadow-card"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download
-              </Link>
+
+            <h3 className="font-secondary text-3xl md:text-4xl font-bold text-primary mb-4">
+              {latestMagazine ? latestMagazine.title : "Loading Title..."}
+            </h3>
+
+            <p className="text-primary/80 mb-6 font-primary leading-relaxed">
+              {latestMagazine
+                ? latestMagazine.description
+                : "Loading description..."}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              {latestMagazine ? (
+                <>
+                  <button
+                    onClick={() => setOpenMag(latestMagazine)}
+                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-accent text-white font-primary font-medium hover:bg-accent/90 transition-colors shadow-soft"
+                  >
+                    Read This Issue
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+
+                  <Link
+                    href={latestMagazine.pdf_file}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-white border border-primary/20 text-primary font-primary font-medium hover:bg-secondary/50 transition-colors shadow-card"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <button
+                    disabled
+                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-accent/70 text-white font-primary font-medium opacity-60 cursor-not-allowed"
+                  >
+                    Loading…
+                  </button>
+                  <button
+                    disabled
+                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-white/70 border border-primary/20 text-primary font-primary font-medium opacity-60 cursor-not-allowed"
+                  >
+                    Loading…
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* FlipBookReader Overlay */}
+      {openMag && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <FlipBookReader
+            pages={openMag.page_images}
+            onClose={() => setOpenMag(null)}
+          />
+        </div>
+      )}
     </section>
-  )
+  );
 }
