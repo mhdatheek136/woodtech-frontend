@@ -1,7 +1,60 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
 import { Instagram, Twitter, Youtube } from "lucide-react"
+import { fetchWithCsrf } from "../lib/csrf"
 
 export function Footer() {
+  const [email, setEmail] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setErrorMessage(null)
+
+    try {
+      const response = await fetchWithCsrf(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/subscribe/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.email) {
+          setErrorMessage(errorData.email.toString())
+        } else if (errorData.non_field_errors) {
+          setErrorMessage(errorData.non_field_errors.toString())
+        } else {
+          setErrorMessage("An unexpected error occurred. Please try again.")
+        }
+        setIsSubmitting(false)
+        return
+      }
+
+      setIsSuccess(true)
+      setEmail("")
+      setIsSubmitting(false)
+
+      setTimeout(() => {
+        setIsSuccess(false)
+      }, 3000)
+    } catch (err) {
+      console.error("Subscription error:", err)
+      setErrorMessage("Network error. Please try again.")
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <footer className="bg-primary text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
@@ -143,20 +196,34 @@ export function Footer() {
               © {new Date().getFullYear()} Burrowed Literary Magazine. Published by Woodland Publishing. All rights
               reserved.
             </p>
-            <div className="mt-4 md:mt-0">
-              <form className="flex">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="px-4 py-2 w-full sm:w-auto rounded-l-2xl border border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-primary"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-r-2xl bg-accent text-white font-primary font-medium hover:bg-accent/90 transition-colors"
-                >
-                  Subscribe
-                </button>
-              </form>
+            <div className="mt-4 md:mt-0 w-full sm:w-auto">
+              {!isSuccess ? (
+                <form onSubmit={handleSubscribe} className="flex">
+                  <input
+                    type="email"
+                    placeholder="Your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="px-4 py-2 w-full sm:w-auto rounded-l-2xl border border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-primary"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 rounded-r-2xl bg-accent text-white font-primary font-medium hover:bg-accent/90 transition-colors flex items-center justify-center"
+                  >
+                    {isSubmitting ? "Submitting..." : "Subscribe"}
+                  </button>
+                </form>
+              ) : (
+                <p className="text-accent font-primary text-sm">Thank you for subscribing!</p>
+              )}
+
+              {errorMessage && (
+                <p className="text-red-400 text-xs mt-2 text-center font-primary">
+                  {errorMessage}
+                </p>
+              )}
             </div>
           </div>
         </div>
