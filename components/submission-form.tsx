@@ -1,12 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Upload, AlertCircle, CheckCircle } from "lucide-react"
+import { fetchWithCsrf } from "../lib/csrf"
 
 interface FormErrors {
-  name?: string
+  firstName?: string
+  lastName?: string
   email?: string
   title?: string
   bio?: string
@@ -15,7 +16,8 @@ interface FormErrors {
 
 export function SubmissionForm() {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     title: "",
     bio: "",
@@ -49,7 +51,6 @@ export function SubmissionForm() {
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      // 10MB
       return "File size must be less than 10MB"
     }
 
@@ -59,8 +60,11 @@ export function SubmissionForm() {
   const validateForm = () => {
     const newErrors: FormErrors = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required"
+    }
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required"
     }
 
     if (!formData.email.trim()) {
@@ -93,7 +97,6 @@ export function SubmissionForm() {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
 
-    // Clear errors when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
@@ -107,7 +110,6 @@ export function SubmissionForm() {
       setFormData((prev) => ({ ...prev, file }))
       setFileName(file.name)
 
-      // Clear file errors when user selects a file
       if (errors.file) {
         setErrors((prev) => ({ ...prev, file: undefined }))
       }
@@ -116,12 +118,12 @@ export function SubmissionForm() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Mark all fields as touched
     setTouched({
-      name: true,
+      firstName: true,
+      lastName: true,
       email: true,
       title: true,
       bio: true,
@@ -129,7 +131,6 @@ export function SubmissionForm() {
     })
 
     const formErrors = validateForm()
-
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors)
       return
@@ -137,27 +138,49 @@ export function SubmissionForm() {
 
     setIsSubmitting(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
+    // Build multipart form data
+    const payload = new FormData()
+    payload.append('first_name', formData.firstName)
+    payload.append('last_name', formData.lastName)
+    payload.append('email', formData.email)
+    payload.append('title', formData.title)
+    payload.append('bio', formData.bio)
+    payload.append('message', formData.message)
+    if (formData.file) payload.append('file', formData.file)
+
+    try {
+      const res = await fetchWithCsrf(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/submit/`,
+        {
+          method: 'POST',
+          body: payload,
+        }
+      )
+
+      const data = await res.json()
+      if (!res.ok) {
+        // map field errors
+        const newErrors: FormErrors = {}
+        for (const key in data) {
+          if (data[key]) newErrors[key as keyof FormErrors] = data[key].toString()
+        }
+        setErrors(newErrors)
+        setIsSubmitting(false)
+        return
+      }
+
+      // success
       setIsSuccess(true)
-      setFormData({
-        name: "",
-        email: "",
-        title: "",
-        bio: "",
-        message: "",
-        file: null,
-      })
-      setFileName("")
+      setFormData({ firstName: '', lastName: '', email: '', title: '', bio: '', message: '', file: null })
+      setFileName('')
       setErrors({})
       setTouched({})
-
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setIsSuccess(false)
-      }, 5000)
-    }, 1500)
+    } catch (error) {
+      console.error('Submission error:', error)
+      setErrors({ email: 'Network error. Please try again.' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isSuccess) {
@@ -182,30 +205,54 @@ export function SubmissionForm() {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-navy/10 shadow-sm p-6 md:p-8">
-      <div className="grid grid-cols-1 gap-6">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
-            Full Name *
+      {/* Side-by-side names on md+, stacked on mobile */}
+      <div className="flex flex-col md:flex-row md:space-x-6">
+        <div className="flex-1">
+          <label htmlFor="firstName" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
+            First Name *
           </label>
           <input
             type="text"
-            id="name"
-            name="name"
-            value={formData.name}
+            id="firstName"
+            name="firstName"
+            value={formData.firstName}
             onChange={handleChange}
             className={`w-full px-4 py-3 rounded-md border ${
-              errors.name && touched.name ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
+              errors.firstName && touched.firstName ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
             } focus:outline-none focus:ring-2 font-primary`}
-            placeholder="Your name"
+            placeholder="Your first name"
           />
-          {errors.name && touched.name && (
+          {errors.firstName && touched.firstName && (
             <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" />
-              <span>{errors.name}</span>
+              <AlertCircle className="h-4 w-4" /> <span>{errors.firstName}</span>
             </div>
           )}
         </div>
+        <div className="flex-1 mt-6 md:mt-0">
+          <label htmlFor="lastName" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
+            Last Name *
+          </label>
+          <input
+            type="text"
+            id="lastName"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleChange}
+            className={`w-full px-4 py-3 rounded-md border ${
+              errors.lastName && touched.lastName ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
+            } focus:outline-none focus:ring-2 font-primary`}
+            placeholder="Your last name"
+          />
+          {errors.lastName && touched.lastName && (
+            <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
+              <AlertCircle className="h-4 w-4" /> <span>{errors.lastName}</span>
+            </div>
+          )}
+        </div>
+      </div>
 
+      <div className="space-y-6 mt-6">
+        {/* Email */}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
             Email Address *
@@ -223,12 +270,12 @@ export function SubmissionForm() {
           />
           {errors.email && touched.email && (
             <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" />
-              <span>{errors.email}</span>
+              <AlertCircle className="h-4 w-4" /> <span>{errors.email}</span>
             </div>
           )}
         </div>
 
+        {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
             Title of Piece *
@@ -246,59 +293,45 @@ export function SubmissionForm() {
           />
           {errors.title && touched.title && (
             <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" />
-              <span>{errors.title}</span>
+              <AlertCircle className="h-4 w-4" /> <span>{errors.title}</span>
             </div>
           )}
         </div>
 
+        {/* File Upload */}
         <div>
-          <label htmlFor="file" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
+          <label htmlFor="file-upload" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
             Upload Your Work *
           </label>
-          <div
-            className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+          <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
               errors.file && touched.file ? "border-red-500" : "border-navy/20"
             }`}
           >
             <div className="space-y-1 text-center">
-              <Upload
-                className={`mx-auto h-12 w-12 ${errors.file && touched.file ? "text-red-400" : "text-navy/30"}`}
-              />
+              <Upload className={`mx-auto h-12 w-12 ${errors.file && touched.file ? "text-red-400" : "text-navy/30"}`} />
               <div className="flex text-sm text-navy/60">
-                <label
-                  htmlFor="file-upload"
-                  className="relative cursor-pointer rounded-md font-medium text-navy hover:text-navy/80"
-                >
+                <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-navy hover:text-navy/80">
                   <span>Upload a file</span>
-                  <input
-                    id="file-upload"
-                    name="file-upload"
-                    type="file"
-                    className="sr-only"
-                    onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.txt"
-                  />
+                  <input id="file-upload" name="file" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.doc,.docx,.txt" />
                 </label>
                 <p className="pl-1">or drag and drop</p>
               </div>
               <p className="text-xs text-navy/60">PDF, DOC, DOCX or TXT up to 10MB</p>
               {fileName && (
                 <p className="text-sm text-navy font-medium mt-2 flex items-center justify-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  {fileName}
+                  <CheckCircle className="h-4 w-4 text-green-600" /> {fileName}
                 </p>
               )}
             </div>
           </div>
           {errors.file && touched.file && (
             <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" />
-              <span>{errors.file}</span>
+              <AlertCircle className="h-4 w-4" /> <span>{errors.file}</span>
             </div>
           )}
         </div>
 
+        {/* Bio */}
         <div>
           <label htmlFor="bio" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
             Short Bio (50-80 words) *
@@ -313,26 +346,20 @@ export function SubmissionForm() {
               errors.bio && touched.bio ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
             } focus:outline-none focus:ring-2 font-primary`}
             placeholder="Tell us a little about yourself..."
-          ></textarea>
+          />
           <div className="flex justify-between items-center mt-1">
             {errors.bio && touched.bio && (
               <div className="flex items-center gap-2 text-red-600 text-sm">
-                <AlertCircle className="h-4 w-4" />
-                <span>{errors.bio}</span>
+                <AlertCircle className="h-4 w-4" /> <span>{errors.bio}</span>
               </div>
             )}
             <div className="text-xs text-navy/60 ml-auto">
-              {
-                formData.bio
-                  .trim()
-                  .split(" ")
-                  .filter((word) => word.length > 0).length
-              }{" "}
-              words
+              {formData.bio.trim().split(/\s+/).filter(w => w).length} words
             </div>
           </div>
         </div>
 
+        {/* Message */}
         <div>
           <label htmlFor="message" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
             Message / Optional Note
@@ -345,9 +372,10 @@ export function SubmissionForm() {
             rows={3}
             className="w-full px-4 py-3 rounded-md border border-navy/20 focus:outline-none focus:ring-2 focus:ring-navy/30 font-primary"
             placeholder="Any additional information you'd like to share..."
-          ></textarea>
+          />
         </div>
 
+        {/* Submit Button */}
         <div>
           <button
             type="submit"

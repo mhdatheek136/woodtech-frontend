@@ -16,35 +16,44 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/health/`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Health check failed (${res.status})`)
-        }
-        return res.json()
-      })
-      .then(() => setLoading(false))
-      .catch(() => {
-        // Don’t remove this console.error if you want to see errors during development:
-        console.error("Backend health‐check error")
-        setError("Could not reach server. Retrying…")
+    let retryInterval: NodeJS.Timeout
 
-        setTimeout(() => {
-          setError(null)
-          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/health/`)
-            .then((res) => {
-              if (!res.ok) {
-                throw new Error(`Health check failed (${res.status})`)
-              }
-              return res.json()
-            })
-            .then(() => setLoading(false))
-            .catch(() => {
-              console.error("Second attempt failed")
-              setError("Still waiting on server…")
-            })
-        }, 3000)
-      })
+    const checkHealth = () => {
+      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/health/`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Health check failed (${res.status})`)
+          return res.json()
+        })
+        .then(() => {
+          setLoading(false)
+          clearInterval(retryInterval)
+        })
+        .catch(() => {
+          console.error("Backend health-check failed")
+          setError("Still waiting on server…")
+        })
+    }
+
+    // Initial check
+    checkHealth()
+
+    // Retry every 5 seconds until success
+    retryInterval = setInterval(() => {
+      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/health/`)
+        .then((res) => {
+          if (!res.ok) throw new Error()
+          return res.json()
+        })
+        .then(() => {
+          clearInterval(retryInterval)
+          location.reload() // Auto-refresh on recovery
+        })
+        .catch(() => {
+          console.log("Retrying health check...")
+        })
+    }, 5000)
+
+    return () => clearInterval(retryInterval)
   }, [])
 
   if (loading) {
