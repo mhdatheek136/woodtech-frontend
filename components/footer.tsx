@@ -132,22 +132,28 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/submission-guidelines"
+                  href="/submit"
                   className="text-white/60 hover:text-accent text-sm font-primary transition-colors"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 >
                   Submission Guidelines
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/sponsorship"
+                  href="/collaborate"
                   className="text-white/60 hover:text-accent text-sm font-primary transition-colors"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 >
                   Sponsorship
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-white/60 hover:text-accent text-sm font-primary transition-colors">
+                <Link
+                  href="/faq"
+                  className="text-white/60 hover:text-accent text-sm font-primary transition-colors"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                >
                   FAQ
                 </Link>
               </li>
@@ -155,6 +161,7 @@ export function Footer() {
                 <Link
                   href="/contact"
                   className="text-white/60 hover:text-accent text-sm font-primary transition-colors"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 >
                   Contact
                 </Link>
@@ -167,21 +174,27 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/privacy-policy"
+                  href="/legal"
                   className="text-white/60 hover:text-accent text-sm font-primary transition-colors"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-white/60 hover:text-accent text-sm font-primary transition-colors">
+                <Link
+                  href="/legal"
+                  className="text-white/60 hover:text-accent text-sm font-primary transition-colors"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                >
                   Terms of Use
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/copyright"
+                  <Link
+                  href="/legal"
                   className="text-white/60 hover:text-accent text-sm font-primary transition-colors"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 >
                   Copyright
                 </Link>
