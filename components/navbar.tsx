@@ -125,13 +125,13 @@ export function Navbar() {
             >
               Collaborate
             </Link>
-            <Link
-              href="/submit"
-              className="block px-4 py-3 rounded-2xl text-base font-primary font-medium bg-accent text-white hover:bg-accent/90 transition-colors mx-2 mt-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Submit Your Work
-            </Link>
+          <Link
+            href="/submit"
+            className="block px-4 py-3 rounded-2xl text-base font-primary font-medium bg-accent text-white hover:bg-accent/90 transition-colors mx-2 mt-2 text-center"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Submit Your Work
+          </Link>
           </div>
         </div>
       )}

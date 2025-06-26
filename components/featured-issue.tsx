@@ -9,15 +9,15 @@ import FlipBookReader from "./FlipBookReader";
 interface Magazine {
   id: number;
   title: string;
-  publish_date: string;    // e.g. "2025-05-10"
+  publish_date: string;
   description: string;
-  cover_image: string;     // absolute URL
+  cover_image: string;
   issue_number: string;
   volume_number: number;
   season_number: number;
-  pdf_file: string;        // absolute URL to PDF
+  pdf_file: string;
   is_published: boolean;
-  page_images: string[];   // array of absolute URLs
+  page_images: string[];
 }
 
 export function FeaturedIssue() {
@@ -51,31 +51,45 @@ export function FeaturedIssue() {
   }
 
   return (
-    <section className="mb-12 md:mb-16">
+    <section className="py-6 px-4 sm:px-6 mb-12 md:mb-16">
       <h2 className="font-secondary text-2xl font-bold text-primary mb-6">
         Latest Issue
       </h2>
 
       <div className="bg-white overflow-hidden shadow-card border border-primary/5">
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-12">
-          {/* Left Column: Cover Image at A4 Aspect Ratio with Hover Motion */}
-          <div className="flex justify-center items-center">
-            <div className="relative w-full max-w-md bg-white shadow-magazine-edge transform transition-transform duration-300 hover:-translate-y-2 hover:scale-[1.02]">
-              <div className="relative w-full aspect-[210/297] overflow-hidden">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+          {/* Left Column: Cover Image with sharp corners */}
+          <div className="flex justify-center items-center p-6 md:p-8">
+            <div className="relative w-full max-w-sm bg-white transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              {/* Cover with sharp corners */}
+              <div className="relative w-full aspect-[210/297] overflow-hidden border border-gray-200">
                 {latestMagazine ? (
                   <Image
                     src={latestMagazine.cover_image}
                     alt={`Cover of ${latestMagazine.title}`}
                     fill
-                    className="object-contain"
+                    className="object-cover"
                     priority
                   />
                 ) : (
-                  <div className="bg-gray-200 w-full h-full" />
+                  <div className="bg-gray-200 w-full h-full animate-pulse" />
                 )}
-                <div className="absolute inset-0 border border-gray-200"></div>
-                <div className="absolute inset-0 shadow-magazine-inner"></div>
+                
+                {/* Subtle shadow effect */}
+                <div className="absolute inset-0 shadow-[inset_0_0_15px_rgba(0,0,0,0.03)]"></div>
               </div>
+              
+              {/* Cover shadow - sharp bottom edge */}
+              <div className="absolute -bottom-3 left-2 right-2 h-3 bg-gray-200/40 blur-sm z-[-1]"></div>
+              
+              {/* Issue badge - sharp corners */}
+              {latestMagazine && (
+                <div className="absolute top-4 left-4 bg-white/95 px-3 py-1 border border-gray-300">
+                  <span className="text-primary font-primary text-xs font-medium">
+                    Vol. {latestMagazine.volume_number} · {formatPublishDate(latestMagazine.publish_date)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -132,13 +146,13 @@ export function FeaturedIssue() {
                 <>
                   <button
                     disabled
-                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-accent/70 text-white font-primary font-medium opacity-60 cursor-not-allowed"
+                    className="inline-flex items-center px-6 py-3 bg-accent/70 text-white font-primary font-medium opacity-60 cursor-not-allowed"
                   >
                     Loading…
                   </button>
                   <button
                     disabled
-                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-white/70 border border-primary/20 text-primary font-primary font-medium opacity-60 cursor-not-allowed"
+                    className="inline-flex items-center px-6 py-3 bg-white/70 border border-primary/20 text-primary font-primary font-medium opacity-60 cursor-not-allowed"
                   >
                     Loading…
                   </button>
