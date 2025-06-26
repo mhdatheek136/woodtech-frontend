@@ -32,16 +32,24 @@ export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
+  // Utility to scroll to the first field with an error
+  const scrollToError = (errs: FormErrors) => {
+    const field = (["name", "email", "message"] as Array<keyof FormErrors>)
+      .find((key) => errs[key] != null)
+    if (field) {
+      const el = document.getElementById(field)
+      el?.scrollIntoView({ behavior: "smooth", block: "center" })
+    } else if (errs.non_field_errors) {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
   }
+
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
   const clientValidate = (): FormErrors => {
     const errs: FormErrors = {}
-    if (!formData.name.trim()) {
-      errs.name = "Name is required"
-    }
+    if (!formData.name.trim()) errs.name = "Name is required"
     if (!formData.email.trim()) {
       errs.email = "Email is required"
     } else if (!validateEmail(formData.email)) {
@@ -68,12 +76,13 @@ export function ContactForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // mark all touched
     setTouched({ name: true, email: true, message: true })
 
-    const clientErrors = clientValidate()
-    if (Object.keys(clientErrors).length) {
-      setErrors(clientErrors)
+    // Client-side validation
+    const clientErrs = clientValidate()
+    if (Object.keys(clientErrs).length) {
+      setErrors(clientErrs)
+      scrollToError(clientErrs)
       return
     }
 
@@ -89,11 +98,10 @@ export function ContactForm() {
           body: JSON.stringify(formData),
         }
       )
-
       const payload = await res.json()
+
       if (!res.ok) {
         const fieldErrors: FormErrors = {}
-        // map field errors:
         for (const key of ["name", "email", "message"] as Array<keyof FormErrors>) {
           if (payload[key]) {
             fieldErrors[key] = Array.isArray(payload[key])
@@ -101,7 +109,6 @@ export function ContactForm() {
               : String(payload[key])
           }
         }
-        // non-field
         if (payload.non_field_errors) {
           fieldErrors.non_field_errors = Array.isArray(payload.non_field_errors)
             ? payload.non_field_errors.join(" ")
@@ -111,18 +118,21 @@ export function ContactForm() {
           fieldErrors.non_field_errors = String(payload.detail)
         }
         setErrors(fieldErrors)
+        scrollToError(fieldErrors)
         setIsSubmitting(false)
         return
       }
 
-      // success
+      // Success
       setIsSuccess(true)
       setFormData({ name: "", email: "", message: "" })
       setTouched({ name: false, email: false, message: false })
-      setIsSubmitting(false)
       setTimeout(() => setIsSuccess(false), 5000)
-    } catch (err) {
-      setErrors({ non_field_errors: "Network error. Please try again." })
+    } catch {
+      const netErr = { non_field_errors: "Network error. Please try again." }
+      setErrors(netErr)
+      scrollToError(netErr)
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -164,10 +174,7 @@ export function ContactForm() {
 
       {/* Name */}
       <div className="mb-6">
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-primary/70 mb-2 font-primary"
-        >
+        <label htmlFor="name" className="block text-sm font-medium mb-2">
           Name *
         </label>
         <input
@@ -180,7 +187,7 @@ export function ContactForm() {
             errors.name && touched.name
               ? "border-red-500 focus:ring-red-500"
               : "border-primary/20 focus:ring-accent/30"
-          } focus:outline-none focus:ring-2 font-primary text-lg transition-all`}
+          } focus:outline-none focus:ring-2`}
           placeholder="Your full name"
           required
         />
@@ -194,10 +201,7 @@ export function ContactForm() {
 
       {/* Email */}
       <div className="mb-6">
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-primary/70 mb-2 font-primary"
-        >
+        <label htmlFor="email" className="block text-sm font-medium mb-2">
           Email Address *
         </label>
         <input
@@ -210,7 +214,7 @@ export function ContactForm() {
             errors.email && touched.email
               ? "border-red-500 focus:ring-red-500"
               : "border-primary/20 focus:ring-accent/30"
-          } focus:outline-none focus:ring-2 font-primary text-lg transition-all`}
+          } focus:outline-none focus:ring-2`}
           placeholder="your.email@example.com"
           required
         />
@@ -224,10 +228,7 @@ export function ContactForm() {
 
       {/* Message */}
       <div className="mb-6">
-        <label
-          htmlFor="message"
-          className="block text-sm font-medium text-primary/70 mb-2 font-primary"
-        >
+        <label htmlFor="message" className="block text-sm font-medium mb-2">
           Message *
         </label>
         <textarea
@@ -240,7 +241,7 @@ export function ContactForm() {
             errors.message && touched.message
               ? "border-red-500 focus:ring-red-500"
               : "border-primary/20 focus:ring-accent/30"
-          } focus:outline-none focus:ring-2 font-primary text-lg transition-all resize-none`}
+          } focus:outline-none focus:ring-2 resize-none`}
           placeholder="Tell us what's on your mind..."
           required
         />
@@ -261,10 +262,10 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full px-8 py-4 bg-accent text-white rounded-2xl font-primary font-semibold text-lg hover:bg-accent/90 transition-all shadow-soft disabled:opacity-70 flex items-center justify-center gap-3"
+        className="w-full px-8 py-4 bg-accent text-white rounded-2xl font-medium hover:bg-accent/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-3"
       >
         {isSubmitting ? (
-          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         ) : (
           "Send Message"
         )}

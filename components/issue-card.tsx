@@ -40,6 +40,7 @@ export function IssueCard({
           <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
             <FlipBookReader
               pages={openPages}
+              downloadUrl={pdfFile} 
               onClose={() => setOpenPages(null)}
             />
           </div>,

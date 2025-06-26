@@ -1,91 +1,96 @@
-import React, { useRef, useState, useEffect } from 'react';
-import HTMLFlipBook from 'react-pageflip';
-import './FlipBookReader.css';
+import React, { useRef, useState, useEffect } from 'react'
+import HTMLFlipBook from 'react-pageflip'
+import { X as CloseIcon, Download } from 'lucide-react'
+import './FlipBookReader.css'
 
 interface FlipBookReaderProps {
-  pages: string[];           // Array of page image URLs
-  onClose: () => void;       // Callback when close button clicked
+  pages: string[]            // Array of page image URLs
+  downloadUrl?: string       // Optional URL to download the full PDF (or zip of images)
+  onClose: () => void        // Callback when close button clicked
 }
 
-export default function FlipBookReader({ pages = [], onClose }: FlipBookReaderProps) {
-  // Properly type the ref using InstanceType<typeof HTMLFlipBook>
-  const bookRef = useRef<InstanceType<typeof HTMLFlipBook> | null>(null);
-
-  const [loaded, setLoaded] = useState<number>(0);
-  const [dimensions, setDimensions] = useState<{ vw: number; vh: number }>({
+export default function FlipBookReader({
+  pages = [],
+  downloadUrl,
+  onClose,
+}: FlipBookReaderProps) {
+  const bookRef = useRef<InstanceType<typeof HTMLFlipBook> | null>(null)
+  const [loaded, setLoaded] = useState(0)
+  const [dimensions, setDimensions] = useState({
     vw: window.innerWidth,
     vh: window.innerHeight,
-  });
-  const [fade, setFade] = useState<boolean>(true);
-  const [closing, setClosing] = useState<boolean>(false);
+  })
+  const [fade, setFade] = useState(true)
+  const [closing, setClosing] = useState(false)
 
+  const totalPages = pages.length + 1 // include prompt page
+
+  // Auto-count prompt page once all real pages loaded
   useEffect(() => {
-    let timeoutId: number;
+    if (loaded === pages.length) {
+      setLoaded((l) => l + 1)
+    }
+  }, [loaded, pages.length])
 
-    const handleResize = () => {
-      setFade(false);
-      clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        setDimensions({ vw: window.innerWidth, vh: window.innerHeight });
-        setFade(true);
-      }, 300);
-    };
-
-    window.addEventListener('resize', handleResize);
+  // Handle resize with fade
+  useEffect(() => {
+    let tid: number
+    const onResize = () => {
+      setFade(false)
+      clearTimeout(tid)
+      tid = window.setTimeout(() => {
+        setDimensions({ vw: window.innerWidth, vh: window.innerHeight })
+        setFade(true)
+      }, 300)
+    }
+    window.addEventListener('resize', onResize)
     return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
-    };
-  }, []);
+      window.removeEventListener('resize', onResize)
+      clearTimeout(tid)
+    }
+  }, [])
 
-  useEffect(() => {
-    setLoaded(0);
-  }, [pages]);
+  // Reset loaded count when pages change
+  useEffect(() => setLoaded(0), [pages])
 
-  const { vw, vh } = dimensions;
-  const aspectRatio = 1 / 1.414; // A4 ratio
+  // Compute sizing (A4 ratio)
+  const { vw, vh } = dimensions
+  const aspectRatio = 1 / 1.414
+  const padding = 16
+  const availW = vw - padding * 2
+  const availH = vh - padding * 2
 
-  const padding = 16;
-  const availableWidth = vw - padding * 2;
-  const availableHeight = vh - padding * 2;
+  let pageH = availH
+  let pageW = pageH * aspectRatio
+  let single = false
 
-  let pageHeight = availableHeight;
-  let pageWidth = pageHeight * aspectRatio;
-
-  let isSinglePage = false;
-
-  if (pageWidth * 2 > availableWidth) {
-    isSinglePage = true;
-    if (pageWidth > availableWidth) {
-      pageWidth = availableWidth;
-      pageHeight = pageWidth / aspectRatio;
+  if (pageW * 2 > availW) {
+    single = true
+    if (pageW > availW) {
+      pageW = availW
+      pageH = pageW / aspectRatio
     }
   } else {
-    pageWidth = Math.min(pageWidth, availableWidth / 2);
-    pageHeight = pageWidth / aspectRatio;
+    pageW = Math.min(pageW, availW / 2)
+    pageH = pageW / aspectRatio
   }
 
-  const MIN_WIDTH = 200;
-  const MIN_HEIGHT = 280;
+  const MIN_W = 200, MIN_H = 280
+  pageW = Math.max(pageW, MIN_W)
+  pageH = Math.max(pageH, MIN_H)
 
-  pageWidth = Math.max(pageWidth, MIN_WIDTH);
-  pageHeight = Math.max(pageHeight, MIN_HEIGHT);
+  const containerW = single ? pageW : pageW * 2
+  const containerH = pageH
 
-  const containerWidth = isSinglePage ? pageWidth : pageWidth * 2;
-  const containerHeight = pageHeight;
-
-  const totalPages = pages.length;
-  const progress = totalPages ? Math.round((loaded / totalPages) * 100) : 100;
-  const flipBookKey = `${isSinglePage ? 'single' : 'double'}-${Math.round(containerHeight)}`;
+  const progress = totalPages ? Math.round((loaded / totalPages) * 100) : 100
+  const key = `${single ? 'single' : 'double'}-${Math.round(containerH)}`
 
   const handleClose = () => {
-    setClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 300); // match fade-out duration
-  };
+    setClosing(true)
+    setTimeout(onClose, 300)
+  }
 
-  if (!totalPages) {
+  if (!pages.length) {
     return (
       <div className={`overlay ${closing ? 'closing' : ''}`}>
         <div className="empty-state">
@@ -95,11 +100,12 @@ export default function FlipBookReader({ pages = [], onClose }: FlipBookReaderPr
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className={`overlay ${closing ? 'closing' : ''}`}>
+      {/* Loading overlay until all pages (including prompt) loaded */}
       {loaded < totalPages && (
         <div className="loading-overlay">
           <p className="loading-text">Loading {progress}%</p>
@@ -112,8 +118,8 @@ export default function FlipBookReader({ pages = [], onClose }: FlipBookReaderPr
       <div
         className="book-container"
         style={{
-          width: containerWidth,
-          height: containerHeight,
+          width: containerW,
+          height: containerH,
           margin: '0 auto',
           maxWidth: '100%',
           maxHeight: '100%',
@@ -122,41 +128,71 @@ export default function FlipBookReader({ pages = [], onClose }: FlipBookReaderPr
         }}
       >
         <header className="book-header">
-          <button onClick={handleClose} className="btn-close">
-            ✕
-          </button>
+          <div className="header-buttons">
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                download
+                className="btn-download"
+                title="Download PDF"
+              >
+                <Download size={18} />
+              </a>
+            )}
+            <button onClick={handleClose} className="btn-close" title="Close">
+              <CloseIcon size={18} />
+            </button>
+          </div>
         </header>
 
         <div className="book-content">
           <HTMLFlipBook
-            key={flipBookKey}
+            key={key}
             ref={bookRef}
-            width={pageWidth}
-            height={pageHeight}
+            width={pageW}
+            height={pageH}
             size="fixed"
             showCover
             drawShadow={false}
-            maxShadowOpacity={0.5}
             mobileScrollSupport
+            usePortrait={single}
             className="flipbook"
-            autoSize={false}
-            useMouseEvents
-            usePortrait={isSinglePage}
           >
             {pages.map((url, i) => (
-              <div key={i} className={`page ${i === 0 ? 'cover-page' : 'inner-page'}`}>
+              <div
+                key={`page-${i}`}
+                className={`page ${i === 0 ? 'cover-page' : 'inner-page'}`}
+              >
                 <img
                   src={url}
                   alt={`Page ${i + 1}`}
                   onLoad={() => setLoaded((l) => l + 1)}
                   className="page-image"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </div>
             ))}
+
+            {/* Final prompt page */}
+            <div className="page inner-page flex items-center justify-center p-6">
+              <div className="text-center">
+                <p className="font-primary text-lg mb-4">
+                  To read the full issue, please download the PDF.
+                </p>
+                {downloadUrl && (
+                  <a
+                    href={downloadUrl}
+                    download
+                    className="inline-flex items-center px-4 py-2 rounded-2xl bg-accent text-white font-primary hover:bg-accent/90 transition-colors"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </a>
+                )}
+              </div>
+            </div>
           </HTMLFlipBook>
         </div>
       </div>
     </div>
-  );
+  )
 }

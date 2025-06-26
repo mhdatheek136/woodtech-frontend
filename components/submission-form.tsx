@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Upload, AlertCircle, CheckCircle } from "lucide-react"
 import { fetchWithCsrf } from "../lib/csrf"
 
@@ -12,6 +11,7 @@ interface FormErrors {
   title?: string
   bio?: string
   file?: string
+  non_field_errors?: string
 }
 
 export function SubmissionForm() {
@@ -30,97 +30,84 @@ export function SubmissionForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
-  // Validation functions
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
+  // Helpers
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
   const validateFile = (file: File | null) => {
     if (!file) return "Please upload your work"
-
-    const allowedTypes = [
+    const allowed = [
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "text/plain",
     ]
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowed.includes(file.type))
       return "Please upload a PDF, DOC, DOCX, or TXT file"
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      return "File size must be less than 10MB"
-    }
-
+    if (file.size > 10 * 1024 * 1024) return "File size must be under 10MB"
     return null
   }
 
-  const validateForm = () => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required"
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required"
-    }
-
+  // Client-side form validation
+  const clientValidate = (): FormErrors => {
+    const errs: FormErrors = {}
+    if (!formData.firstName.trim()) errs.firstName = "First name is required"
+    if (!formData.lastName.trim()) errs.lastName = "Last name is required"
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
+      errs.email = "Email is required"
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
+      errs.email = "Enter a valid email"
     }
-
-    if (!formData.title.trim()) {
-      newErrors.title = "Title is required"
-    }
-
+    if (!formData.title.trim()) errs.title = "Title is required"
     if (!formData.bio.trim()) {
-      newErrors.bio = "Bio is required"
-    } else if (formData.bio.trim().split(" ").length < 10) {
-      newErrors.bio = "Bio should be at least 10 words (50-80 words recommended)"
-    } else if (formData.bio.trim().split(" ").length > 100) {
-      newErrors.bio = "Bio should be no more than 100 words (50-80 words recommended)"
+      errs.bio = "Bio is required"
+    } else {
+      const wordCount = formData.bio.trim().split(/\s+/).length
+      if (wordCount < 10)
+        errs.bio = "Bio should be at least 10 words"
+      else if (wordCount > 100)
+        errs.bio = "Bio should be no more than 100 words"
     }
-
-    const fileError = validateFile(formData.file)
-    if (fileError) {
-      newErrors.file = fileError
-    }
-
-    return newErrors
+    const fileErr = validateFile(formData.file)
+    if (fileErr) errs.file = fileErr
+    return errs
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }))
+  // Scroll to first error field
+  const scrollToError = (errs: FormErrors) => {
+    const field = Object.keys(errs).find((k) => k !== "non_field_errors")
+    if (field) {
+      const el = document.getElementById(field)
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" })
+    } else if (errs.non_field_errors) {
+      // scroll to top of form if non-field
+      const formEl = document.getElementById("submission-form")
+      formEl?.scrollIntoView({ behavior: "smooth", block: "start" })
     }
+  }
 
-    setTouched((prev) => ({ ...prev, [name]: true }))
+  // Handlers
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target
+    setFormData((f) => ({ ...f, [name]: value }))
+    setTouched((t) => ({ ...t, [name]: true }))
+    if (errors[name as keyof FormErrors]) {
+      setErrors((e) => ({ ...e, [name]: undefined }))
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setFormData((prev) => ({ ...prev, file }))
-      setFileName(file.name)
-
-      if (errors.file) {
-        setErrors((prev) => ({ ...prev, file: undefined }))
-      }
-
-      setTouched((prev) => ({ ...prev, file: true }))
-    }
+    const file = e.target.files?.[0] ?? null
+    setFormData((f) => ({ ...f, file }))
+    setFileName(file?.name ?? "")
+    setTouched((t) => ({ ...t, file: true }))
+    if (errors.file) setErrors((e) => ({ ...e, file: undefined }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     setTouched({
       firstName: true,
       lastName: true,
@@ -130,68 +117,86 @@ export function SubmissionForm() {
       file: true,
     })
 
-    const formErrors = validateForm()
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors)
+    // 1) Client-side validation
+    const clientErrs = clientValidate()
+    if (Object.keys(clientErrs).length) {
+      setErrors(clientErrs)
+      scrollToError(clientErrs)
       return
     }
 
     setIsSubmitting(true)
+    setErrors({})
 
-    // Build multipart form data
+    // 2) Build multipart payload
     const payload = new FormData()
-    payload.append('first_name', formData.firstName)
-    payload.append('last_name', formData.lastName)
-    payload.append('email', formData.email)
-    payload.append('title', formData.title)
-    payload.append('bio', formData.bio)
-    payload.append('message', formData.message)
-    if (formData.file) payload.append('file', formData.file)
+    payload.append("first_name", formData.firstName)
+    payload.append("last_name", formData.lastName)
+    payload.append("email", formData.email)
+    payload.append("title", formData.title)
+    payload.append("bio", formData.bio)
+    payload.append("message", formData.message)
+    if (formData.file) payload.append("file", formData.file)
 
     try {
       const res = await fetchWithCsrf(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/submit/`,
         {
-          method: 'POST',
+          method: "POST",
           body: payload,
         }
       )
-
       const data = await res.json()
+
       if (!res.ok) {
-        // map field errors
-        const newErrors: FormErrors = {}
+        // Map server errors into our shape
+        const srvErrs: FormErrors = {}
         for (const key in data) {
-          if (data[key]) newErrors[key as keyof FormErrors] = data[key].toString()
+          srvErrs[key as keyof FormErrors] = Array.isArray(data[key])
+            ? data[key].join(" ")
+            : String(data[key])
         }
-        setErrors(newErrors)
+        setErrors(srvErrs)
+        scrollToError(srvErrs)
         setIsSubmitting(false)
         return
       }
 
-      // success
+      // Success!
       setIsSuccess(true)
-      setFormData({ firstName: '', lastName: '', email: '', title: '', bio: '', message: '', file: null })
-      setFileName('')
-      setErrors({})
-      setTouched({})
-    } catch (error) {
-      console.error('Submission error:', error)
-      setErrors({ email: 'Network error. Please try again.' })
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        title: "",
+        bio: "",
+        message: "",
+        file: null,
+      })
+      setFileName("")
+    } catch {
+      const errObj: FormErrors = {
+        non_field_errors: "Network error. Please try again.",
+      }
+      setErrors(errObj)
+      scrollToError(errObj)
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // Render
   if (isSuccess) {
     return (
       <div className="text-center p-8 bg-white rounded-lg border border-navy/10 shadow-sm">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
-        <h3 className="font-secondary text-2xl font-bold text-navy mb-4">Submission Received!</h3>
+        <h3 className="font-secondary text-2xl font-bold text-navy mb-4">
+          Submission Received!
+        </h3>
         <p className="font-primary text-navy/80 mb-6">
-          Thank you for sharing your work with us. We'll review your submission and get back to you within 2-3 weeks.
+          Thank you! We'll review and get back within 2–3 weeks.
         </p>
         <button
           onClick={() => setIsSuccess(false)}
@@ -204,188 +209,219 @@ export function SubmissionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-navy/10 shadow-sm p-6 md:p-8">
-      {/* Side-by-side names on md+, stacked on mobile */}
+    <form
+      id="submission-form"
+      onSubmit={handleSubmit}
+      className="bg-white rounded-lg border border-navy/10 shadow-sm p-6 md:p-8 space-y-6"
+      noValidate
+    >
+      {errors.non_field_errors && (
+        <div className="flex items-center gap-2 text-red-600 text-sm">
+          <AlertCircle className="h-4 w-4" />
+          {errors.non_field_errors}
+        </div>
+      )}
+
+      {/* Names */}
       <div className="flex flex-col md:flex-row md:space-x-6">
-        <div className="flex-1">
-          <label htmlFor="firstName" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
+        <div className="flex-1 mb-4 md:mb-0">
+          <label htmlFor="firstName" className="block text-sm font-medium mb-1">
             First Name *
           </label>
           <input
-            type="text"
             id="firstName"
             name="firstName"
+            type="text"
             value={formData.firstName}
             onChange={handleChange}
             className={`w-full px-4 py-3 rounded-md border ${
-              errors.firstName && touched.firstName ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
-            } focus:outline-none focus:ring-2 font-primary`}
-            placeholder="Your first name"
+              errors.firstName && touched.firstName
+                ? "border-red-500"
+                : "border-navy/20"
+            } focus:outline-none focus:ring-2 focus:ring-navy/30`}
           />
           {errors.firstName && touched.firstName && (
-            <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" /> <span>{errors.firstName}</span>
-            </div>
+            <p className="flex items-center gap-2 mt-1 text-red-600 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              {errors.firstName}
+            </p>
           )}
         </div>
-        <div className="flex-1 mt-6 md:mt-0">
-          <label htmlFor="lastName" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
+        <div className="flex-1">
+          <label htmlFor="lastName" className="block text-sm font-medium mb-1">
             Last Name *
           </label>
           <input
-            type="text"
             id="lastName"
             name="lastName"
+            type="text"
             value={formData.lastName}
             onChange={handleChange}
             className={`w-full px-4 py-3 rounded-md border ${
-              errors.lastName && touched.lastName ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
-            } focus:outline-none focus:ring-2 font-primary`}
-            placeholder="Your last name"
+              errors.lastName && touched.lastName
+                ? "border-red-500"
+                : "border-navy/20"
+            } focus:outline-none focus:ring-2 focus:ring-navy/30`}
           />
           {errors.lastName && touched.lastName && (
-            <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" /> <span>{errors.lastName}</span>
-            </div>
+            <p className="flex items-center gap-2 mt-1 text-red-600 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              {errors.lastName}
+            </p>
           )}
         </div>
       </div>
 
-      <div className="space-y-6 mt-6">
-        {/* Email */}
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
-            Email Address *
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className={`w-full px-4 py-3 rounded-md border ${
-              errors.email && touched.email ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
-            } focus:outline-none focus:ring-2 font-primary`}
-            placeholder="your.email@example.com"
-          />
-          {errors.email && touched.email && (
-            <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" /> <span>{errors.email}</span>
-            </div>
-          )}
-        </div>
+      {/* Email */}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium mb-1">
+          Email Address *
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          className={`w-full px-4 py-3 rounded-md border ${
+            errors.email && touched.email
+              ? "border-red-500"
+              : "border-navy/20"
+          } focus:outline-none focus:ring-2 focus:ring-navy/30`}
+        />
+        {errors.email && touched.email && (
+          <p className="flex items-center gap-2 mt-1 text-red-600 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            {errors.email}
+          </p>
+        )}
+      </div>
 
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
-            Title of Piece *
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className={`w-full px-4 py-3 rounded-md border ${
-              errors.title && touched.title ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
-            } focus:outline-none focus:ring-2 font-primary`}
-            placeholder="Title of your submission"
-          />
-          {errors.title && touched.title && (
-            <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" /> <span>{errors.title}</span>
-            </div>
-          )}
-        </div>
+      {/* Title */}
+      <div>
+        <label htmlFor="title" className="block text-sm font-medium mb-1">
+          Title of Piece *
+        </label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          value={formData.title}
+          onChange={handleChange}
+          className={`w-full px-4 py-3 rounded-md border ${
+            errors.title && touched.title
+              ? "border-red-500"
+              : "border-navy/20"
+          } focus:outline-none focus:ring-2 focus:ring-navy/30`}
+        />
+        {errors.title && touched.title && (
+          <p className="flex items-center gap-2 mt-1 text-red-600 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            {errors.title}
+          </p>
+        )}
+      </div>
 
-        {/* File Upload */}
-        <div>
-          <label htmlFor="file-upload" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
-            Upload Your Work *
-          </label>
-          <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
-              errors.file && touched.file ? "border-red-500" : "border-navy/20"
-            }`}
-          >
-            <div className="space-y-1 text-center">
-              <Upload className={`mx-auto h-12 w-12 ${errors.file && touched.file ? "text-red-400" : "text-navy/30"}`} />
-              <div className="flex text-sm text-navy/60">
-                <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-navy hover:text-navy/80">
-                  <span>Upload a file</span>
-                  <input id="file-upload" name="file" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.doc,.docx,.txt" />
-                </label>
-                <p className="pl-1">or drag and drop</p>
-              </div>
-              <p className="text-xs text-navy/60">PDF, DOC, DOCX or TXT up to 10MB</p>
-              {fileName && (
-                <p className="text-sm text-navy font-medium mt-2 flex items-center justify-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" /> {fileName}
-                </p>
-              )}
-            </div>
-          </div>
-          {errors.file && touched.file && (
-            <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" /> <span>{errors.file}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Bio */}
-        <div>
-          <label htmlFor="bio" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
-            Short Bio (50-80 words) *
-          </label>
-          <textarea
-            id="bio"
-            name="bio"
-            value={formData.bio}
-            onChange={handleChange}
-            rows={3}
-            className={`w-full px-4 py-3 rounded-md border ${
-              errors.bio && touched.bio ? "border-red-500 focus:ring-red-500" : "border-navy/20 focus:ring-navy/30"
-            } focus:outline-none focus:ring-2 font-primary`}
-            placeholder="Tell us a little about yourself..."
-          />
-          <div className="flex justify-between items-center mt-1">
-            {errors.bio && touched.bio && (
-              <div className="flex items-center gap-2 text-red-600 text-sm">
-                <AlertCircle className="h-4 w-4" /> <span>{errors.bio}</span>
-              </div>
+      {/* File */}
+      <div>
+        <label htmlFor="file" className="block text-sm font-medium mb-1">
+          Upload Your Work *
+        </label>
+        <div
+          className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+            errors.file && touched.file
+              ? "border-red-500"
+              : "border-navy/20"
+          }`}
+        >
+          <div className="space-y-1 text-center">
+            <Upload
+              className={`mx-auto h-12 w-12 ${
+                errors.file && touched.file ? "text-red-400" : "text-navy/30"
+              }`}
+            />
+            <label
+              htmlFor="file"
+              className="relative cursor-pointer rounded-md font-medium text-navy hover:text-navy/80"
+            >
+              <span>Upload a file</span>
+              <input
+                id="file"
+                name="file"
+                type="file"
+                className="sr-only"
+                accept=".pdf,.doc,.docx,.txt"
+                onChange={handleFileChange}
+              />
+            </label>
+            <p className="text-xs text-navy/60">PDF, DOC, DOCX, TXT up to 10MB</p>
+            {fileName && (
+              <p className="text-sm font-medium text-navy mt-2 flex items-center justify-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" /> {fileName}
+              </p>
             )}
-            <div className="text-xs text-navy/60 ml-auto">
-              {formData.bio.trim().split(/\s+/).filter(w => w).length} words
-            </div>
           </div>
         </div>
+        {errors.file && touched.file && (
+          <p className="flex items-center gap-2 mt-1 text-red-600 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            {errors.file}
+          </p>
+        )}
+      </div>
 
-        {/* Message */}
-        <div>
-          <label htmlFor="message" className="block text-sm font-medium text-navy/70 mb-1 font-primary">
-            Message / Optional Note
-          </label>
-          <textarea
-            id="message"
-            name="message"
-            value={formData.message}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-4 py-3 rounded-md border border-navy/20 focus:outline-none focus:ring-2 focus:ring-navy/30 font-primary"
-            placeholder="Any additional information you'd like to share..."
-          />
-        </div>
-
-        {/* Submit Button */}
-        <div>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full px-6 py-3 bg-navy text-cream rounded-md font-primary font-medium hover:bg-navy/90 transition-colors disabled:opacity-70"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Your Work"}
-          </button>
+      {/* Bio */}
+      <div>
+        <label htmlFor="bio" className="block text-sm font-medium mb-1">
+          Short Bio *
+        </label>
+        <textarea
+          id="bio"
+          name="bio"
+          rows={3}
+          value={formData.bio}
+          onChange={handleChange}
+          className={`w-full px-4 py-3 rounded-md border ${
+            errors.bio && touched.bio
+              ? "border-red-500"
+              : "border-navy/20"
+          } focus:outline-none focus:ring-2 focus:ring-navy/30`}
+        />
+        <div className="flex justify-between items-center mt-1">
+          {errors.bio && touched.bio && (
+            <p className="flex items-center gap-2 text-red-600 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              {errors.bio}
+            </p>
+          )}
+          <p className="text-xs text-navy/60 ml-auto">
+            {formData.bio.trim().split(/\s+/).filter(Boolean).length} words
+          </p>
         </div>
       </div>
+
+      {/* Optional message */}
+      <div>
+        <label htmlFor="message" className="block text-sm font-medium mb-1">
+          Message / Optional Note
+        </label>
+        <textarea
+          id="message"
+          name="message"
+          rows={3}
+          value={formData.message}
+          onChange={handleChange}
+          className="w-full px-4 py-3 rounded-md border border-navy/20 focus:outline-none focus:ring-2 focus:ring-navy/30"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full px-6 py-3 bg-navy text-cream rounded-md font-primary font-medium hover:bg-navy/90 transition-colors disabled:opacity-70"
+      >
+        {isSubmitting ? "Submitting..." : "Submit Your Work"}
+      </button>
     </form>
   )
 }
