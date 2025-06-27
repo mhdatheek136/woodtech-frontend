@@ -173,21 +173,24 @@ export default function FlipBookReader({
             ))}
 
             {/* Final prompt page */}
-            <div className="page inner-page flex items-center justify-center p-6">
-              <div className="text-center">
-                <p className="font-primary text-lg mb-4">
-                  To read the full issue, please download the PDF.
-                </p>
-                {downloadUrl && (
-                  <a
-                    href={downloadUrl}
-                    download
-                    className="inline-flex items-center px-4 py-2 rounded-2xl bg-accent text-white font-primary hover:bg-accent/90 transition-colors"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </a>
-                )}
+            {/* Final prompt page */}
+            <div className="page inner-page relative">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                <div className="text-center max-w-md">
+                  <p className="font-primary text-lg mb-4">
+                    To read the full issue, please download the PDF.
+                  </p>
+                  {downloadUrl && (
+                    <a
+                      href={downloadUrl}
+                      download
+                      className="inline-flex items-center px-4 py-2 rounded-sm bg-accent text-white font-primary hover:bg-accent/90 transition-colors"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </HTMLFlipBook>
