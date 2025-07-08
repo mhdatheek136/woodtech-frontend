@@ -1,40 +1,46 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { Send, CheckCircle, AlertCircle } from "lucide-react"
 import { fetchWithCsrf } from "../lib/csrf"
+import ReCAPTCHA from "react-google-recaptcha"
 
 interface FormData {
   name: string
   email: string
   message: string
+  recaptchaToken: string
 }
 
 interface FormErrors {
   name?: string
   email?: string
   message?: string
+  recaptchaToken?: string
   non_field_errors?: string
 }
 
 export function ContactForm() {
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
     message: "",
+    recaptchaToken: ""
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<Record<keyof FormData, boolean>>({
     name: false,
     email: false,
     message: false,
+    recaptchaToken: false
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
   // Utility to scroll to the first field with an error
   const scrollToError = (errs: FormErrors) => {
-    const field = (["name", "email", "message"] as Array<keyof FormErrors>)
+    const field = (["name", "email", "message", "recaptchaToken"] as Array<keyof FormErrors>)
       .find((key) => errs[key] != null)
     if (field) {
       const el = document.getElementById(field)
@@ -60,6 +66,9 @@ export function ContactForm() {
     } else if (formData.message.trim().length < 10) {
       errs.message = "Message must be at least 10 characters"
     }
+    if (!formData.recaptchaToken) {
+      errs.recaptchaToken = "Please verify you're not a robot"
+    }
     return errs
   }
 
@@ -74,9 +83,42 @@ export function ContactForm() {
     }
   }
 
+  const handleRecaptchaChange = (token: string | null) => {
+    if (token) {
+      setFormData(f => ({ ...f, recaptchaToken: token }))
+      setTouched(t => ({ ...t, recaptchaToken: true }))
+      setErrors(e => ({ ...e, recaptchaToken: undefined }))
+    } else {
+      setFormData(f => ({ ...f, recaptchaToken: "" }))
+      setErrors(e => ({ ...e, recaptchaToken: "Please verify you're not a robot" }))
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      message: "",
+      recaptchaToken: ""
+    })
+    setTouched({
+      name: false,
+      email: false,
+      message: false,
+      recaptchaToken: false
+    })
+    setErrors({})
+    recaptchaRef.current?.reset()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setTouched({ name: true, email: true, message: true })
+    setTouched({
+      name: true,
+      email: true,
+      message: true,
+      recaptchaToken: true
+    })
 
     // Client-side validation
     const clientErrs = clientValidate()
@@ -95,13 +137,27 @@ export function ContactForm() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            message: formData.message,
+            recaptcha_token: formData.recaptchaToken
+          }),
         }
       )
       const payload = await res.json()
 
       if (!res.ok) {
         const fieldErrors: FormErrors = {}
+        
+        // Handle reCAPTCHA errors separately
+        if (payload.recaptcha_token) {
+          fieldErrors.recaptchaToken = Array.isArray(payload.recaptcha_token)
+            ? payload.recaptcha_token.join(" ")
+            : String(payload.recaptcha_token)
+        }
+        
+        // Handle other fields
         for (const key of ["name", "email", "message"] as Array<keyof FormErrors>) {
           if (payload[key]) {
             fieldErrors[key] = Array.isArray(payload[key])
@@ -109,29 +165,33 @@ export function ContactForm() {
               : String(payload[key])
           }
         }
+        
         if (payload.non_field_errors) {
           fieldErrors.non_field_errors = Array.isArray(payload.non_field_errors)
             ? payload.non_field_errors.join(" ")
             : String(payload.non_field_errors)
         }
+        
         if (!Object.keys(fieldErrors).length && payload.detail) {
           fieldErrors.non_field_errors = String(payload.detail)
         }
+        
         setErrors(fieldErrors)
         scrollToError(fieldErrors)
+        recaptchaRef.current?.reset()
         setIsSubmitting(false)
         return
       }
 
       // Success
       setIsSuccess(true)
-      setFormData({ name: "", email: "", message: "" })
-      setTouched({ name: false, email: false, message: false })
+      resetForm()
       setTimeout(() => setIsSuccess(false), 5000)
     } catch {
       const netErr = { non_field_errors: "Network error. Please try again." }
       setErrors(netErr)
       scrollToError(netErr)
+      recaptchaRef.current?.reset()
     } finally {
       setIsSubmitting(false)
     }
@@ -150,7 +210,10 @@ export function ContactForm() {
           Thank you for reaching out. We'll get back to you shortly.
         </p>
         <button
-          onClick={() => setIsSuccess(false)}
+          onClick={() => {
+            setIsSuccess(false)
+            resetForm()
+          }}
           className="px-6 py-3 bg-accent text-white rounded-2xl font-primary font-medium hover:bg-accent/90 transition-colors shadow-soft"
         >
           Send Another
@@ -258,19 +321,36 @@ export function ContactForm() {
         </div>
       </div>
 
-      {/* Submit */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full px-8 py-4 bg-accent text-white rounded-2xl font-medium hover:bg-accent/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-3"
-      >
-        {isSubmitting ? (
-          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        ) : (
-          "Send Message"
+    {/* reCAPTCHA */}
+    <div className="mb-6 flex justify-center">
+      <div className="recaptcha-container">
+        <ReCAPTCHA
+          ref={recaptchaRef}
+          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+          onChange={handleRecaptchaChange}
+        />
+        {errors.recaptchaToken && touched.recaptchaToken && (
+          <p className="flex items-center gap-2 mt-2 text-red-600 text-sm justify-center">
+            <AlertCircle className="h-4 w-4" />
+            {errors.recaptchaToken}
+          </p>
         )}
-        {!isSubmitting && <Send className="h-5 w-5" />}
-      </button>
+      </div>
+    </div>
+
+{/* Submit */}
+<button
+  type="submit"
+  disabled={isSubmitting}
+  className="w-full max-w-[304px] mx-auto px-8 py-4 bg-accent text-white rounded-2xl font-medium hover:bg-accent/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-3"
+>
+  {isSubmitting ? (
+    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+  ) : (
+    "Send Message"
+  )}
+  {!isSubmitting && <Send className="h-5 w-5" />}
+</button>
     </form>
   )
 }

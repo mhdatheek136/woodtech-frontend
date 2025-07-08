@@ -8,6 +8,7 @@ import { LatestIssue } from "@/components/latest-issue"
 import { SubmissionCallout } from "@/components/submission-callout"
 import { FeaturedNewsletter } from "@/components/featured-newsletter"
 import { SponsorCollaborate } from "@/components/sponsor-collaborate"
+import { DonationSection } from "@/components/donation-section"
 import { Footer } from "@/components/footer"
 import { LoadingBar } from "@/components/LoadingBar"
 
@@ -75,6 +76,7 @@ export default function Home() {
         <AboutPreview />
         <LatestIssue />
         <SubmissionCallout />
+        <DonationSection />
         <FeaturedNewsletter />
         <SponsorCollaborate />
       </main>

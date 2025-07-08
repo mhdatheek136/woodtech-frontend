@@ -5,27 +5,27 @@ import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 
 export function SponsorCollaborate() {
-  // Sample sponsor/partner logos - in a real implementation, these would be actual partner logos
+  // Real sponsor/partner logos
   const partners = [
     {
-      name: "Literary Arts Foundation",
-      logo: "/placeholder.svg?height=60&width=140&text=Literary+Arts",
-      website: "https://literaryarts.org",
+      name: "Coffidu",
+      logo: "/logo/Coffidu-Logo.png",
+      website: "https://coffidu.com",
     },
     {
-      name: "Writers Guild",
-      logo: "/placeholder.svg?height=60&width=140&text=Writers+Guild",
-      website: "https://writersguild.org",
+      name: "Flashbook",
+      logo: "/logo/Flashbook-Logo-text.png",
+      website: "https://flashbook.lk",
     },
     {
-      name: "Poetry Society",
-      logo: "/placeholder.svg?height=60&width=140&text=Poetry+Society",
-      website: "https://poetrysociety.org",
+      name: "Halal Hearts",
+      logo: "/logo/HalalHearts-logo-text.png",
+      website: "https://halalhearts.lk",
     },
     {
-      name: "Book Culture",
-      logo: "/placeholder.svg?height=60&width=140&text=Book+Culture",
-      website: "https://bookculture.com",
+      name: "Halal Hearts",
+      logo: "/logo/HalalHearts-logo-text.png",
+      website: "https://halalhearts.lk",
     },
   ]
 
@@ -39,37 +39,36 @@ export function SponsorCollaborate() {
               Sponsor or Collaborate
             </h2>
             <p className="text-primary/80 font-primary text-lg md:text-xl leading-relaxed max-w-3xl mx-auto mb-8">
-              Partner with Burrowed to tell your brand's story in a literary way. We offer unique opportunities for
-              thoughtful brands to connect with our engaged community of readers and writers through sponsorships and
-              creative collaborations.
+              Partner with us to showcase your brand and connect with our vibrant community through meaningful sponsorships and collaborations.
             </p>
           </div>
 
           {/* Partners Grid */}
           <div className="mb-16">
             <h3 className="font-secondary text-xl font-semibold text-primary mb-8 text-center">
-              Trusted by Literary Organizations & Creative Partners
+              Trusted by Our Partners
             </h3>
 
-            {/* Logo Grid */}
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 lg:gap-16">
               {partners.map((partner, index) => (
-                <div key={index} className="group relative w-full max-w-[160px] h-16 flex items-center justify-center">
+                <div
+                  key={index}
+                  className="group relative w-full max-w-[200px] h-24 flex items-center justify-center"
+                >
                   <a
                     href={partner.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full h-full relative transition-all duration-300 hover:scale-105"
+                    className="block w-full h-full relative transition-transform duration-300 hover:scale-105"
                   >
                     <Image
-                      src={partner.logo || "/placeholder.svg"}
+                      src={partner.logo}
                       alt={`${partner.name} logo`}
                       fill
                       className="object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300 opacity-70 group-hover:opacity-100"
                     />
                   </a>
 
-                  {/* Tooltip on hover */}
                   <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-md text-xs font-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-10">
                     {partner.name}
                   </div>
@@ -82,7 +81,12 @@ export function SponsorCollaborate() {
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-accent/5 to-primary/5 border border-primary/10">
               <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6 text-accent"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -91,15 +95,22 @@ export function SponsorCollaborate() {
                   />
                 </svg>
               </div>
-              <h4 className="font-secondary text-lg font-semibold text-primary mb-2">Brand Partnerships</h4>
+              <h4 className="font-secondary text-lg font-semibold text-primary mb-2">
+                Brand Partnerships
+              </h4>
               <p className="text-primary/70 font-primary text-sm">
-                Thoughtful brand integrations that respect our literary aesthetic
+                Seamless brand integrations that align with our mission and aesthetic.
               </p>
             </div>
 
             <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -108,15 +119,22 @@ export function SponsorCollaborate() {
                   />
                 </svg>
               </div>
-              <h4 className="font-secondary text-lg font-semibold text-primary mb-2">Literary Events</h4>
+              <h4 className="font-secondary text-lg font-semibold text-primary mb-2">
+                Literary Events
+              </h4>
               <p className="text-primary/70 font-primary text-sm">
-                Co-hosted readings, workshops, and literary gatherings
+                Collaborative readings, workshops, and gatherings that inspire.
               </p>
             </div>
 
             <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-accent/5 to-primary/5 border border-primary/10">
               <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6 text-accent"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -125,9 +143,11 @@ export function SponsorCollaborate() {
                   />
                 </svg>
               </div>
-              <h4 className="font-secondary text-lg font-semibold text-primary mb-2">Content Collaboration</h4>
+              <h4 className="font-secondary text-lg font-semibold text-primary mb-2">
+                Content Collaboration
+              </h4>
               <p className="text-primary/70 font-primary text-sm">
-                Special issues, contests, and co-created literary content
+                Co-created issues, contests, and special projects.
               </p>
             </div>
           </div>
@@ -142,7 +162,7 @@ export function SponsorCollaborate() {
               <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
             </Link>
             <p className="mt-4 text-primary/60 font-primary text-sm">
-              Let's create something beautiful together.{" "}
+              Let's build something amazing together.{' '}
               <Link href="/collaborate" className="text-accent hover:text-accent/80 transition-colors">
                 Get in touch
               </Link>

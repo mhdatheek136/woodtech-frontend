@@ -264,58 +264,59 @@ export function HeroSection() {
       {/* Main content */}
    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 relative z-10">
         <div className="grid lg:grid-cols-5 gap-8 md:gap-12 lg:gap-16 items-center max-w-7xl mx-auto">
-          {/* Left Column - Magazine Display */}
-          <div className="lg:col-span-3 order-1 lg:order-1">
-            <div className="relative group">
-              <div className="bg-white/95 backdrop-blur-sm p-6 md:p-8 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-2 shadow-magazine-edge">
-                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
-                  {/* Magazine cover */}
-                  <div className="relative w-full max-w-[240px] md:max-w-[280px] aspect-[210/297] overflow-hidden transform transition-transform duration-300 group-hover:scale-[1.02] shadow-magazine-inner">
-                    {latestMagazine ? (
-                      <Image
-                        src={latestMagazine.cover_image}
-                        alt={`Issue ${latestMagazine.issue_number} Cover`}
-                        fill
-                        className="object-cover"
-                        priority
-                      />
-                    ) : (
-                      <div className="bg-gray-200 w-full h-full" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent"></div>
-                    <div className="absolute inset-0 border border-gray-200"></div>
-                  </div>
+{/* Left Column - Magazine Display */}
+<div className="lg:col-span-3 order-1 lg:order-1">
+  <div className="relative group">
+    {/* Updated outermost container: restored padding and kept rounded corners */}
+    <div className="bg-white/95 backdrop-blur-sm p-6 md:p-8 rounded-2xl transform transition-all duration-500 hover:shadow-xl hover:-translate-y-2 shadow-magazine-edge">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
+        {/* Magazine cover */}
+        <div className="relative w-full max-w-[240px] md:max-w-[280px] aspect-[210/297] overflow-hidden transform transition-transform duration-300 group-hover:scale-[1.02] shadow-magazine-inner">
+          {latestMagazine ? (
+            <Image
+              src={latestMagazine.cover_image}
+              alt={`Issue ${latestMagazine.issue_number} Cover`}
+              fill
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="bg-gray-200 w-full h-full" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 border border-gray-200"></div>
+        </div>
 
-                  {/* Issue details */}
-                  <div className="flex-1 text-center md:text-left">
-                    <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-primary font-bold mb-4 shadow-sm">
-                      {latestMagazine
-                        ? `Latest Issue - ${new Date(latestMagazine.publish_date).toLocaleString("default", {
-                            month: "long",
-                            year: "numeric",
-                          })}`
-                        : "Loading..."}
-                    </div>
-                    <h2 className="font-secondary text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4 leading-tight">
-                      {latestMagazine ? latestMagazine.title : "Loading..."}
-                    </h2>
-                    <p className="text-primary/70 font-primary text-base md:text-lg mb-6 leading-relaxed">
-                      {latestMagazine ? latestMagazine.description : "Fetching latest magazine details..."}
-                    </p>
-                    {latestMagazine && (
-                      <button
-                        onClick={() => setOpenMag(latestMagazine)}
-                        className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 rounded-2xl bg-accent text-white font-primary font-semibold hover:bg-accent/90 transition-all duration-300 shadow-soft hover:shadow-xl group text-sm sm:text-base w-full sm:w-auto justify-center"
-                      >
-                        Read Latest Issue
-                        <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Issue details */}
+        <div className="flex-1 text-center md:text-left">
+          <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-primary font-bold mb-4 shadow-sm">
+            {latestMagazine
+              ? `Latest Issue - ${new Date(latestMagazine.publish_date).toLocaleString("default", {
+                  month: "long",
+                  year: "numeric",
+                })}`
+              : "Loading..."}
           </div>
+          <h2 className="font-secondary text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4 leading-tight">
+            {latestMagazine ? latestMagazine.title : "Loading..."}
+          </h2>
+          <p className="text-primary/70 font-primary text-base md:text-lg mb-6 leading-relaxed">
+            {latestMagazine ? latestMagazine.description : "Fetching latest magazine details..."}
+          </p>
+          {latestMagazine && (
+            <button
+              onClick={() => setOpenMag(latestMagazine)}
+              className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 rounded-2xl bg-accent text-white font-primary font-semibold hover:bg-accent/90 transition-all duration-300 shadow-soft hover:shadow-xl group text-sm sm:text-base w-full sm:w-auto justify-center"
+            >
+              Read Latest Issue
+              <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 
           {/* Right Column - Magazine Description (40% width) - Order 2 on mobile */}

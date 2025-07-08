@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Upload, AlertCircle, CheckCircle } from "lucide-react"
 import { fetchWithCsrf } from "../lib/csrf"
+import ReCAPTCHA from "react-google-recaptcha" // Added import
 
 interface FormErrors {
   name?: string
@@ -11,6 +12,7 @@ interface FormErrors {
   organization?: string
   extra_message?: string
   file?: string
+  recaptcha?: string // Added error type
   non_field_errors?: string
 }
 
@@ -27,6 +29,8 @@ export function CollaborationForm() {
   const [fileName, setFileName] = useState("")
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null) // Added state
+  const recaptchaRef = useRef<ReCAPTCHA>(null) // Added ref
 
   // Create refs for each field
   const nonFieldErrorRef = useRef<HTMLDivElement>(null);
@@ -36,7 +40,7 @@ export function CollaborationForm() {
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLDivElement>(null);
 
-    // Scroll to first error when errors change
+  // Scroll to first error when errors change
   useEffect(() => {
     if (Object.keys(errors).length === 0) return;
     
@@ -59,6 +63,9 @@ export function CollaborationForm() {
       } 
       else if (errors.file && fileRef.current) {
         fileRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      else if (errors.recaptcha && recaptchaRef.current) { // Added case
+        recaptchaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }, 100);
     
@@ -99,7 +106,20 @@ export function CollaborationForm() {
       }
     }
     
+    // Added reCAPTCHA validation
+    if (!recaptchaToken) {
+      newErrors.recaptcha = "Please complete the reCAPTCHA verification"
+    }
+    
     return newErrors
+  }
+
+  // Handle reCAPTCHA change
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token)
+    if (errors.recaptcha) {
+      setErrors(prev => ({ ...prev, recaptcha: undefined }))
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -155,6 +175,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     formPayload.append("brand_or_organization", formData.organization);
     formPayload.append("message", formData.message);
     if (formData.file) formPayload.append("logo_or_sample", formData.file);
+    formPayload.append("recaptcha_token", recaptchaToken || ""); // Added token
 
     // Construct API endpoint with environment variable
     const apiEndpoint = `${process.env.NEXT_PUBLIC_API_BASE_URL}/collaborate/`;
@@ -167,10 +188,20 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     if (!response.ok) {
       const errorData = await response.json();
+      
+      // Reset recaptcha on error
+      setRecaptchaToken(null);
+      recaptchaRef.current?.reset();
+      
       if (errorData.email) {
         setErrors({ email: Array.isArray(errorData.email) ? errorData.email[0] : errorData.email });
       } else if (errorData.non_field_errors) {
         setErrors({ non_field_errors: Array.isArray(errorData.non_field_errors) ? errorData.non_field_errors[0] : errorData.non_field_errors });
+      } else if (errorData.recaptcha_token) { // Handle recaptcha errors
+        setErrors({ recaptcha: Array.isArray(errorData.recaptcha_token) 
+          ? errorData.recaptcha_token[0] 
+          : errorData.recaptcha_token
+        });
       } else {
         // Handle field-specific errors from backend
         const backendErrors: FormErrors = {};
@@ -188,6 +219,10 @@ const handleSubmit = async (e: React.FormEvent) => {
     setIsSuccess(true);
     setFormData({ name: "", email: "", organization: "", message: "", file: null });
     setFileName("");
+    
+    // Reset recaptcha on success
+    setRecaptchaToken(null);
+    recaptchaRef.current?.reset();
     
     // Reset success after 5 seconds
     setTimeout(() => setIsSuccess(false), 5000);
@@ -379,13 +414,28 @@ const handleSubmit = async (e: React.FormEvent) => {
             </div>
           )}
         </div>
+        
+        {/* Added reCAPTCHA */}
+        <div className="flex flex-col items-center py-2">
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+            onChange={handleRecaptchaChange}
+          />
+          {errors.recaptcha && (
+            <div className="flex items-center gap-2 mt-2 text-red-600 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              <span>{errors.recaptcha}</span>
+            </div>
+          )}
+        </div>
 
-        <div>
+        <div className="flex items-center justify-center h-full">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-6 py-3 bg-navy text-cream rounded-md font-primary font-medium hover:bg-navy/90 transition-colors disabled:opacity-70 flex items-center justify-center"
-          >
+            className="w-full max-w-[304px] mx-auto px-6 py-3 bg-navy text-cream rounded-md font-primary font-medium hover:bg-navy/90 transition-colors disabled:opacity-70"
+      >
             {isSubmitting ? "Sending..." : "Start the Conversation"}
           </button>
         </div>

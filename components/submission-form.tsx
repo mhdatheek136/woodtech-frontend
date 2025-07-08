@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react" // Added useRef
 import { Upload, AlertCircle, CheckCircle } from "lucide-react"
 import { fetchWithCsrf } from "../lib/csrf"
+import ReCAPTCHA from "react-google-recaptcha" // Import ReCAPTCHA
 
 interface FormErrors {
   firstName?: string
@@ -11,6 +12,7 @@ interface FormErrors {
   title?: string
   bio?: string
   file?: string
+  recaptcha?: string // Added recaptcha error
   non_field_errors?: string
 }
 
@@ -29,6 +31,8 @@ export function SubmissionForm() {
   const [fileName, setFileName] = useState("")
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null) // Added recaptcha token
+  const recaptchaRef = useRef<ReCAPTCHA>(null) // Added recaptcha ref
 
   // Helpers
   const validateEmail = (email: string) =>
@@ -70,6 +74,12 @@ export function SubmissionForm() {
     }
     const fileErr = validateFile(formData.file)
     if (fileErr) errs.file = fileErr
+    
+    // Add recaptcha validation
+    if (!recaptchaToken) {
+      errs.recaptcha = "Please complete the reCAPTCHA verification"
+    }
+    
     return errs
   }
 
@@ -106,6 +116,14 @@ export function SubmissionForm() {
     if (errors.file) setErrors((e) => ({ ...e, file: undefined }))
   }
 
+  // Handle recaptcha change
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token)
+    if (errors.recaptcha) {
+      setErrors(e => ({ ...e, recaptcha: undefined }))
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setTouched({
@@ -137,6 +155,7 @@ export function SubmissionForm() {
     payload.append("bio", formData.bio)
     payload.append("message", formData.message)
     if (formData.file) payload.append("file", formData.file)
+    payload.append("recaptcha_token", recaptchaToken || "") // Add recaptcha token
 
     try {
       const res = await fetchWithCsrf(
@@ -158,6 +177,11 @@ export function SubmissionForm() {
         }
         setErrors(srvErrs)
         scrollToError(srvErrs)
+        
+        // Reset recaptcha on error
+        setRecaptchaToken(null)
+        recaptchaRef.current?.reset()
+        
         setIsSubmitting(false)
         return
       }
@@ -174,6 +198,10 @@ export function SubmissionForm() {
         file: null,
       })
       setFileName("")
+      
+      // Reset recaptcha on success
+      setRecaptchaToken(null)
+      recaptchaRef.current?.reset()
     } catch {
       const errObj: FormErrors = {
         non_field_errors: "Network error. Please try again.",
@@ -414,14 +442,31 @@ export function SubmissionForm() {
           className="w-full px-4 py-3 rounded-md border border-navy/20 focus:outline-none focus:ring-2 focus:ring-navy/30"
         />
       </div>
+      
+      {/* Added reCAPTCHA */}
+      <div className="flex flex-col items-center">
+        <ReCAPTCHA
+          ref={recaptchaRef}
+          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+          onChange={handleRecaptchaChange}
+        />
+        {errors.recaptcha && (
+          <p className="flex items-center gap-2 mt-2 text-red-600 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            {errors.recaptcha}
+          </p>
+        )}
+      </div>
 
+      <div className="flex items-center justify-center h-full">
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full px-6 py-3 bg-navy text-cream rounded-md font-primary font-medium hover:bg-navy/90 transition-colors disabled:opacity-70"
+        className="w-full max-w-[304px] mx-auto px-6 py-3 bg-navy text-cream rounded-md font-primary font-medium hover:bg-navy/90 transition-colors disabled:opacity-70"
       >
         {isSubmitting ? "Submitting..." : "Submit Your Work"}
       </button>
+      </div>
     </form>
   )
 }

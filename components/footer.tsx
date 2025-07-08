@@ -1,18 +1,43 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import { Instagram, Twitter, Youtube } from "lucide-react"
 import { fetchWithCsrf } from "../lib/csrf"
+import ReCAPTCHA from "react-google-recaptcha" // Import ReCAPTCHA
 
 export function Footer() {
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [showCaptcha, setShowCaptcha] = useState(false) // New state to control reCAPTCHA visibility
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
+
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token)
+  }
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // First step: Validate email and show reCAPTCHA
+    if (!showCaptcha) {
+      if (!email.trim()) {
+        setErrorMessage("Please enter your email address")
+        return
+      }
+      setShowCaptcha(true)
+      return
+    }
+    
+    // Second step: Validate reCAPTCHA and submit
+    if (!captchaToken) {
+      setErrorMessage("Please complete the reCAPTCHA verification")
+      return
+    }
+
     setIsSubmitting(true)
     setErrorMessage(null)
 
@@ -24,7 +49,10 @@ export function Footer() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ 
+            email,
+            recaptcha_token: captchaToken 
+          }),
         }
       )
 
@@ -34,16 +62,22 @@ export function Footer() {
           setErrorMessage(errorData.email.toString())
         } else if (errorData.non_field_errors) {
           setErrorMessage(errorData.non_field_errors.toString())
+        } else if (errorData.recaptcha_token) {
+          setErrorMessage(errorData.recaptcha_token.toString())
         } else {
           setErrorMessage("An unexpected error occurred. Please try again.")
         }
+        recaptchaRef.current?.reset()
         setIsSubmitting(false)
         return
       }
 
       setIsSuccess(true)
       setEmail("")
+      setCaptchaToken(null)
+      setShowCaptcha(false)
       setIsSubmitting(false)
+      recaptchaRef.current?.reset()
 
       setTimeout(() => {
         setIsSuccess(false)
@@ -51,6 +85,7 @@ export function Footer() {
     } catch (err) {
       console.error("Subscription error:", err)
       setErrorMessage("Network error. Please try again.")
+      recaptchaRef.current?.reset()
       setIsSubmitting(false)
     }
   }
@@ -213,22 +248,36 @@ export function Footer() {
             </p>
             <div className="mt-4 md:mt-0 w-full sm:w-auto">
               {!isSuccess ? (
-                <form onSubmit={handleSubscribe} className="flex">
-                  <input
-                    type="email"
-                    placeholder="Your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="px-4 py-2 w-full sm:w-auto rounded-l-2xl border border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-primary"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-4 py-2 rounded-r-2xl bg-accent text-white font-primary font-medium hover:bg-accent/90 transition-colors flex items-center justify-center"
-                  >
-                    {isSubmitting ? "Submitting..." : "Subscribe"}
-                  </button>
+                <form onSubmit={handleSubscribe} className="flex flex-col">
+                  <div className="flex">
+                    <input
+                      type="email"
+                      placeholder="Your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="px-4 py-2 w-full sm:w-auto rounded-l-2xl border border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-primary"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="px-4 py-2 rounded-r-2xl bg-accent text-white font-primary font-medium hover:bg-accent/90 transition-colors flex items-center justify-center"
+                    >
+                      {isSubmitting ? "Submitting..." : "Subscribe"}
+                    </button>
+                  </div>
+                  
+                  {/* Conditionally show reCAPTCHA */}
+                  {showCaptcha && (
+                    <div className="mt-4 flex justify-center">
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                        onChange={handleCaptchaChange}
+                        className="recaptcha-container"
+                      />
+                    </div>
+                  )}
                 </form>
               ) : (
                 <p className="text-accent font-primary text-sm">Thank you for subscribing!</p>

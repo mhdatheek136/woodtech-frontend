@@ -225,7 +225,7 @@ export default function CollaboratePage() {
         <section className="py-16 md:py-24 bg-primary text-cream">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="font-secondary text-3xl md:text-4xl font-bold mb-6">Download Our Media Kit</h2>
+              <h2 className="font-secondary  text-cream/80 text-3xl md:text-4xl font-bold mb-6">Download Our Media Kit</h2>
               <p className="font-primary text-lg text-cream/80 mb-8">Get the details, designs, and sample ad slots.</p>
               <Link
                 href="/media-kit.pdf"

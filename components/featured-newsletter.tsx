@@ -1,20 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Mail, ArrowRight, BookOpen } from "lucide-react"
 import { fetchWithCsrf } from "../lib/csrf"
+import ReCAPTCHA from "react-google-recaptcha"
 
 export function FeaturedNewsletter() {
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [recaptchaError, setRecaptchaError] = useState<string | null>(null)
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token)
+    setRecaptchaError(null)
+    if (!token) {
+      setRecaptchaToken("")
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate reCAPTCHA
+    if (!recaptchaToken) {
+      setRecaptchaError("Please verify you're not a robot")
+      return
+    }
+
     setIsSubmitting(true)
     setErrorMessage(null)
+    setRecaptchaError(null)
 
     try {
       const response = await fetchWithCsrf(
@@ -24,7 +44,11 @@ export function FeaturedNewsletter() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ name, email }),
+          body: JSON.stringify({ 
+            name, 
+            email,
+            recaptcha_token: recaptchaToken 
+          }),
         }
       )
 
@@ -34,9 +58,12 @@ export function FeaturedNewsletter() {
           setErrorMessage(errorData.email.toString())
         } else if (errorData.non_field_errors) {
           setErrorMessage(errorData.non_field_errors.toString())
+        } else if (errorData.recaptcha_token) {
+          setRecaptchaError(errorData.recaptcha_token.toString())
         } else {
           setErrorMessage("An unexpected error occurred. Please try again.")
         }
+        recaptchaRef.current?.reset()
         setIsSubmitting(false)
         return
       }
@@ -44,6 +71,8 @@ export function FeaturedNewsletter() {
       setIsSuccess(true)
       setEmail("")
       setName("")
+      setRecaptchaToken(null)
+      recaptchaRef.current?.reset()
       setIsSubmitting(false)
 
       setTimeout(() => {
@@ -52,6 +81,7 @@ export function FeaturedNewsletter() {
     } catch (err) {
       console.error("Subscription error:", err)
       setErrorMessage("Network error. Please try again.")
+      recaptchaRef.current?.reset()
       setIsSubmitting(false)
     }
   }
@@ -61,12 +91,12 @@ export function FeaturedNewsletter() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {/* Left Info Panel */}
+            {/* Left Info Panel - Unchanged */}
             <div>
               <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10">
                 <Mail className="h-8 w-8 text-white" />
               </div>
-              <h2 className="font-secondary text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
+              <h2 className="font-secondary text-cream/80 text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
                 Join Our Literary Community
               </h2>
               <p className="text-white/80 text-base sm:text-lg mb-6 leading-relaxed font-primary">
@@ -90,7 +120,7 @@ export function FeaturedNewsletter() {
               </div>
             </div>
 
-            {/* Right Form Panel */}
+            {/* Right Form Panel with reCAPTCHA */}
             <div className="w-full">
               <div className="bg-white/10 backdrop-blur-sm p-6 sm:p-8 rounded-2xl border border-white/20 shadow-soft mx-auto max-w-md">
                 {!isSuccess ? (
@@ -134,6 +164,22 @@ export function FeaturedNewsletter() {
                         className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-primary text-sm"
                       />
                     </div>
+                    
+                    {/* reCAPTCHA Component */}
+                    <div className="flex justify-center" >
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                        onChange={handleRecaptchaChange}
+                        className="recaptcha-container"
+                      />
+                    </div>
+                    {recaptchaError && (
+                      <p className="text-red-400 text-sm text-center">
+                        {recaptchaError}
+                      </p>
+                    )}
+
                     <div className="pt-2">
                       <button
                         type="submit"
