@@ -28,7 +28,7 @@ export function HeroSection() {
 
   const [latestMagazine, setLatestMagazine] = useState<Magazine | null>(null)
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api"
-  console.log("Fetching from:", `${API_BASE_URL}/magazines/latest/`)
+  // console.log("Fetching from:", `${API_BASE_URL}/magazines/latest/`)
   const [openMag, setOpenMag] = useState<Magazine | null>(null)
 
   // Fetch latest magazine data
