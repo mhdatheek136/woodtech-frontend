@@ -54,13 +54,19 @@ export function IssueCard({
       <div className="bg-white overflow-hidden shadow-card border border-primary/5 transition-transform hover:shadow-soft hover:-translate-y-1">
         {/* Cover Image */}
         <div className="relative w-full aspect-[1275/1650] overflow-hidden">
-          <Image
-            src={coverImage || "/placeholder.svg"}
-            alt={`${title} Cover`}
-            fill
-            className="object-contain"
-            priority
-          />
+<Image
+  src={
+    coverImage
+      ? `${coverImage}?v=${encodeURIComponent(date)}`
+      : "/placeholder.svg"
+  }
+  alt={`${title} Cover`}
+  fill
+  className="object-contain"
+  priority
+/>
+
+
           <div className="absolute inset-0 border border-gray-200"></div>
         </div>
 
@@ -117,25 +123,26 @@ export function IssueCard({
               </Link>
             )}
 
-            {pdfFile ? (
-              <Link
-                href={pdfFile}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 rounded-2xl bg-white border border-primary/20 text-primary font-primary text-sm font-medium hover:bg-secondary/50 transition-colors shadow-card"
-              >
-                <Download className="mr-1 h-3 w-3" />
-                Download
-              </Link>
-            ) : (
-              <Link
-                href={`/issues/${id}/download`}
-                className="inline-flex items-center px-4 py-2 rounded-2xl bg-white border border-primary/20 text-primary font-primary text-sm font-medium hover:bg-secondary/50 transition-colors shadow-card"
-              >
-                <Download className="mr-1 h-3 w-3" />
-                Download
-              </Link>
-            )}
+{pdfFile ? (
+  <Link
+    href={`${pdfFile}?v=${encodeURIComponent(date)}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-flex items-center px-4 py-2 rounded-2xl bg-white border border-primary/20 text-primary font-primary text-sm font-medium hover:bg-secondary/50 transition-colors shadow-card"
+  >
+    <Download className="mr-1 h-3 w-3" />
+    Download
+  </Link>
+) : (
+  <Link
+    href={`/issues/${id}/download?v=${encodeURIComponent(date)}`}
+    className="inline-flex items-center px-4 py-2 rounded-2xl bg-white border border-primary/20 text-primary font-primary text-sm font-medium hover:bg-secondary/50 transition-colors shadow-card"
+  >
+    <Download className="mr-1 h-3 w-3" />
+    Download
+  </Link>
+)}
+
           </div>
         </div>
       </div>

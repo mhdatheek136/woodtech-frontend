@@ -35,10 +35,14 @@ export function HeroSection() {
   useEffect(() => {
     async function fetchLatestMagazine() {
       try {
-        const res = await fetch(`${API_BASE_URL}/magazines/latest`)
-        if (!res.ok) throw new Error("Failed to fetch latest magazine")
-        const data = await res.json()
-        setLatestMagazine(data)
+          const version = latestMagazine?.publish_date ?? ""
+          const res = await fetch(
+            `${API_BASE_URL}/magazines/latest?v=${encodeURIComponent(version)}`
+          )
+          if (!res.ok) throw new Error("Failed to fetch latest magazine")
+          const data = await res.json()
+          setLatestMagazine(data)
+
       } catch (error) {
         console.error("Error fetching latest magazine:", error)
       }
@@ -273,13 +277,16 @@ export function HeroSection() {
         {/* Magazine cover */}
         <div className="relative w-full max-w-[240px] md:max-w-[280px] aspect-[1275/1650] overflow-hidden transform transition-transform duration-300 group-hover:scale-[1.02] shadow-magazine-inner">
           {latestMagazine ? (
-            <Image
-              src={latestMagazine.cover_image}
-              alt={`Issue ${latestMagazine.issue_number} Cover`}
-              fill
-              className="object-cover"
-              priority
-            />
+        <Image
+          src={`${latestMagazine.cover_image}?v=${new Date(
+            latestMagazine.publish_date
+          ).getTime()}`}
+          alt={`Issue ${latestMagazine.issue_number} Cover`}
+          fill
+          className="object-cover"
+          priority
+        />
+
           ) : (
             <div className="bg-gray-200 w-full h-full" />
           )}

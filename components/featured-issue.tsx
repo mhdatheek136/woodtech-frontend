@@ -63,17 +63,20 @@ export function FeaturedIssue() {
             <div className="relative w-full max-w-sm bg-white transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
               {/* Cover with sharp corners */}
               <div className="relative w-full aspect-[1275/1650] overflow-hidden border border-gray-200">
-                {latestMagazine ? (
-                  <Image
-                    src={latestMagazine.cover_image}
-                    alt={`Cover of ${latestMagazine.title}`}
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                ) : (
-                  <div className="bg-gray-200 w-full h-full animate-pulse" />
-                )}
+{latestMagazine ? (
+  <Image
+    src={`${latestMagazine.cover_image}?v=${encodeURIComponent(
+      latestMagazine.publish_date
+    )}`}
+    alt={`Cover of ${latestMagazine.title}`}
+    fill
+    className="object-cover"
+    priority
+  />
+) : (
+  <div className="bg-gray-200 w-full h-full animate-pulse" />
+)}
+
                 
                 {/* Subtle shadow effect */}
                 <div className="absolute inset-0 shadow-[inset_0_0_15px_rgba(0,0,0,0.03)]"></div>
@@ -140,15 +143,18 @@ export function FeaturedIssue() {
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>
 
-                  <Link
-                    href={latestMagazine.pdf_file}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-white border border-primary/20 text-primary font-primary font-medium hover:bg-secondary/50 transition-colors shadow-card"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </Link>
+<Link
+  href={`${latestMagazine.pdf_file}?v=${encodeURIComponent(
+    latestMagazine.publish_date
+  )}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center px-6 py-3 rounded-2xl bg-white border border-primary/20 text-primary font-primary font-medium hover:bg-secondary/50 transition-colors shadow-card"
+>
+  <Download className="mr-2 h-4 w-4" />
+  Download PDF
+</Link>
+
                 </>
               ) : (
                 <>

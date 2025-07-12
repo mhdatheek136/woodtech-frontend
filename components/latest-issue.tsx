@@ -30,12 +30,16 @@ export function LatestIssue() {
   useEffect(() => {
     async function fetchLatest() {
       try {
-        const res = await fetch(`${API_BASE_URL}/magazines/latest`);
-        if (!res.ok) {
-          throw new Error("Failed to fetch latest magazine");
-        }
-        const data = (await res.json()) as Magazine;
-        setLatestMagazine(data);
+const version = latestMagazine?.publish_date ?? "";
+const res = await fetch(
+  `${API_BASE_URL}/magazines/latest?v=${encodeURIComponent(version)}`
+);
+if (!res.ok) {
+  throw new Error("Failed to fetch latest magazine");
+}
+const data = (await res.json()) as Magazine;
+setLatestMagazine(data);
+
       } catch (err) {
         console.error("Error fetching latest magazine:", err);
       }
@@ -212,13 +216,17 @@ export function LatestIssue() {
               <div className="relative max-w-md mx-auto lg:mx-0">
                 <div className="relative w-full aspect-[1275/1650] overflow-hidden transform transition-all duration-500 hover:shadow-xl hover:scale-[1.02] shadow-magazine-edge">
                   {latestMagazine ? (
-                    <Image
-                      src={latestMagazine.cover_image}
-                      alt={`Cover of ${latestMagazine.title}`}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
+<Image
+  src={`${latestMagazine.cover_image}?v=${encodeURIComponent(
+    latestMagazine.publish_date
+  )}`}
+  alt={`Cover of ${latestMagazine.title}`}
+  fill
+  className="object-cover"
+  priority
+/>
+
+
                   ) : (
                     <div className="bg-gray-200 w-full h-full" />
                   )}
