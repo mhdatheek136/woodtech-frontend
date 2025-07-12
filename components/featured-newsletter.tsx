@@ -23,68 +23,78 @@ export function FeaturedNewsletter() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validate reCAPTCHA
-    if (!recaptchaToken) {
-      setRecaptchaError("Please verify you're not a robot")
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+
+  if (!recaptchaToken) {
+    setRecaptchaError("Please verify you're not a robot")
+    return
+  }
+
+  setIsSubmitting(true)
+  setErrorMessage(null)
+  setRecaptchaError(null)
+
+  try {
+    const response = await fetchWithCsrf(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/subscribe/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          name, 
+          email,
+          recaptcha_token: recaptchaToken 
+        }),
+      }
+    )
+
+    const data = await response.json()
+    console.log("📦 Server response:", data)
+
+    if (!response.ok) {
+      if (data.email) {
+        setErrorMessage(data.email.toString())
+      } else if (data.non_field_errors) {
+        setErrorMessage(data.non_field_errors.toString())
+      } else if (data.recaptcha_token) {
+        setRecaptchaError(data.recaptcha_token.toString())
+      } else if (data.detail) {
+        setErrorMessage(data.detail.toString())
+      } else {
+        setErrorMessage("An unexpected error occurred. Please try again.")
+      }
+
+      recaptchaRef.current?.reset()
+      setIsSubmitting(false)
       return
     }
 
-    setIsSubmitting(true)
-    setErrorMessage(null)
-    setRecaptchaError(null)
-
-    try {
-      const response = await fetchWithCsrf(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/subscribe/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ 
-            name, 
-            email,
-            recaptcha_token: recaptchaToken 
-          }),
-        }
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        if (errorData.email) {
-          setErrorMessage(errorData.email.toString())
-        } else if (errorData.non_field_errors) {
-          setErrorMessage(errorData.non_field_errors.toString())
-        } else if (errorData.recaptcha_token) {
-          setRecaptchaError(errorData.recaptcha_token.toString())
-        } else {
-          setErrorMessage("An unexpected error occurred. Please try again.")
-        }
-        recaptchaRef.current?.reset()
-        setIsSubmitting(false)
-        return
-      }
-
-      setIsSuccess(true)
-      setEmail("")
-      setName("")
-      setRecaptchaToken(null)
-      recaptchaRef.current?.reset()
-      setIsSubmitting(false)
-
-      setTimeout(() => {
-        setIsSuccess(false)
-      }, 3000)
-    } catch (err) {
-      console.error("Subscription error:", err)
-      setErrorMessage("Network error. Please try again.")
-      recaptchaRef.current?.reset()
-      setIsSubmitting(false)
+    // Optional: Show recaptcha data for inspection
+    if (data.recaptcha) {
+      console.log("✅ reCAPTCHA result:", data.recaptcha)
     }
+
+    setIsSuccess(true)
+    setEmail("")
+    setName("")
+    setRecaptchaToken(null)
+    recaptchaRef.current?.reset()
+    setIsSubmitting(false)
+
+    setTimeout(() => {
+      setIsSuccess(false)
+    }, 3000)
+  } catch (err) {
+    console.error("❌ Subscription error:", err)
+    setErrorMessage("Network error. Please try again.")
+    recaptchaRef.current?.reset()
+    setIsSubmitting(false)
   }
+}
+
 
   return (
     <section className="py-16 md:py-24 bg-primary text-white">
