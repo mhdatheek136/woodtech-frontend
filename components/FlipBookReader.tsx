@@ -55,8 +55,8 @@ export default function FlipBookReader({
 
   // Compute sizing (A4 ratio)
   const { vw, vh } = dimensions
-  const aspectRatio = 1 / 1.414
-  const padding = 16
+  const aspectRatio =  1275 / 1650; 
+  const padding = 4
   const availW = vw - padding * 2
   const availH = vh - padding * 2
 

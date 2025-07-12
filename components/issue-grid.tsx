@@ -8,8 +8,8 @@ interface MagazineAPIResponse {
   id: number;
   title: string;
   publish_date: string;       // "YYYY-MM-DD"
-  volume_number: number;
-  season_number: number;
+  year: number;          // Replaced volume_number
+  season: string;        // Replaced season_number (values: 'Winter','Spring','Summer','Fall')
   cover_image: string;        // absolute URL
   page_images: string[];      // absolute URLs
   pdf_file: string;           // absolute URL
@@ -52,8 +52,8 @@ export function IssueGrid() {
             id: mag.id.toString(),
             title: mag.title,
             date: formattedDate,
-            volume: mag.volume_number,
-            edition: mag.season_number,
+            year: mag.year,
+            season: mag.season,
             coverImage: mag.cover_image,
             tags: [],                  // No tags from API; leave empty
             pageImages: mag.page_images,

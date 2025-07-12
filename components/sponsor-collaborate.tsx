@@ -5,7 +5,7 @@ import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 
 export function SponsorCollaborate() {
-  // Real sponsor/partner logos
+  // Real sponsor/partner logos - now with 5 items
   const partners = [
     {
       name: "Coffidu",
@@ -23,9 +23,14 @@ export function SponsorCollaborate() {
       website: "https://halalhearts.lk",
     },
     {
-      name: "Halal Hearts",
-      logo: "/logo/HalalHearts-logo-text.png",
-      website: "https://halalhearts.lk",
+      name: "Aquapatel Jewellery",
+      logo: "/logo/aquapatel_logo.png",
+      website: "",
+    },
+    {
+      name: "KAHIR Clothing",
+      logo: "/logo/KHAIR_logo.png",
+      website: "https://www.instagram.com/khair.cloths?igsh=MTFpc3hjbDlra3pnNg==",
     },
   ]
 
@@ -43,17 +48,17 @@ export function SponsorCollaborate() {
             </p>
           </div>
 
-          {/* Partners Grid */}
+          {/* Partners Grid - Reduced gaps */}
           <div className="mb-16">
             <h3 className="font-secondary text-xl font-semibold text-primary mb-8 text-center">
               Trusted by Our Partners
             </h3>
 
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 lg:gap-16">
+            <div className="flex flex-wrap justify-center items-center gap-5 md:gap-7 lg:gap-8">
               {partners.map((partner, index) => (
                 <div
                   key={index}
-                  className="group relative w-full max-w-[200px] h-24 flex items-center justify-center"
+                  className="group relative w-full max-w-[150px] sm:max-w-[170px] h-16 sm:h-20 flex items-center justify-center"
                 >
                   <a
                     href={partner.website}
@@ -69,7 +74,7 @@ export function SponsorCollaborate() {
                     />
                   </a>
 
-                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-md text-xs font-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-10">
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-white px-2 py-1 rounded text-xs font-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-10">
                     {partner.name}
                   </div>
                 </div>

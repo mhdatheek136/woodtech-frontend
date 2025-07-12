@@ -3,21 +3,21 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, BookOpen, Download, ArrowRight } from "lucide-react";
+import { Calendar, BookOpen, Download, ArrowRight, Sun } from "lucide-react";
 import FlipBookReader from "./FlipBookReader";
 
 interface Magazine {
   id: number;
   title: string;
-  publish_date: string;
+  publish_date: string;  // Format: "YYYY-MM-DD"
   description: string;
-  cover_image: string;
-  issue_number: string;
-  volume_number: number;
-  season_number: number;
-  pdf_file: string;
+  cover_image: string;   // URL to cover image
+  year: number;          // Replaced volume_number
+  season: string;        // Replaced season_number (values: 'Winter','Spring','Summer','Fall')
+  season_display: string;// Human-readable season name (same as season in this case)
+  pdf_file: string;      // URL to PDF file
   is_published: boolean;
-  page_images: string[];
+  page_images: string[]; // Array of URLs to page images
 }
 
 export function FeaturedIssue() {
@@ -62,7 +62,7 @@ export function FeaturedIssue() {
           <div className="flex justify-center items-center p-6 md:p-8">
             <div className="relative w-full max-w-sm bg-white transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
               {/* Cover with sharp corners */}
-              <div className="relative w-full aspect-[210/297] overflow-hidden border border-gray-200">
+              <div className="relative w-full aspect-[1275/1650] overflow-hidden border border-gray-200">
                 {latestMagazine ? (
                   <Image
                     src={latestMagazine.cover_image}
@@ -82,14 +82,16 @@ export function FeaturedIssue() {
               {/* Cover shadow - sharp bottom edge */}
               <div className="absolute -bottom-3 left-2 right-2 h-3 bg-gray-200/40 blur-sm z-[-1]"></div>
               
-              {/* Issue badge - sharp corners */}
-              {latestMagazine && (
-                <div className="absolute top-4 left-4 bg-white/95 px-3 py-1 border border-gray-300">
-                  <span className="text-primary font-primary text-xs font-medium">
-                    Vol. {latestMagazine.volume_number} · {formatPublishDate(latestMagazine.publish_date)}
-                  </span>
-                </div>
-              )}
+{/* Refined compact badge with hover effect */}
+{latestMagazine && (
+  <div className="absolute top-3 left-3 bg-gradient-to-r from-amber-50/80 to-yellow-50/80 px-2 py-[0.125rem] rounded-sm border border-amber-200/50 shadow-xs backdrop-blur-[2px]
+                 hover:from-amber-100 hover:to-yellow-100 hover:border-amber-300 transition-all duration-200">
+    <span className="inline-flex items-center text-amber-800 font-primary text-[0.7rem] font-bold leading-tight">
+      <Sun className="w-2.5 h-2.5 mr-1 text-amber-600" />
+      {latestMagazine.season} · {formatPublishDate(latestMagazine.publish_date)}
+    </span>
+  </div>
+)}
             </div>
           </div>
 
@@ -104,11 +106,17 @@ export function FeaturedIssue() {
               </span>
               <span className="mx-2">•</span>
               <BookOpen className="h-4 w-4" />
-              <span>
-                {latestMagazine
-                  ? `Season ${latestMagazine.season_number}, Vol. ${latestMagazine.volume_number}`
-                  : "Season • Vol"}
-              </span>
+<span className="inline-flex items-center">
+  {latestMagazine ? (
+    <>
+      Year {latestMagazine.year - 2024}, 
+      <Sun className="w-4 h-4 mx-1 text-amber-500" />
+      {latestMagazine.season}
+    </>
+  ) : (
+    "Year • Season"
+  )}
+</span>
             </div>
 
             <h3 className="font-secondary text-3xl md:text-4xl font-bold text-primary mb-4">

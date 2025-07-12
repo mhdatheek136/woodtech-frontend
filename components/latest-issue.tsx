@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Calendar, BookOpen } from "lucide-react";
+import { ArrowRight, Calendar, BookOpen, Sun } from "lucide-react";
 import FlipBookReader from "./FlipBookReader";
 
 interface Magazine {
@@ -13,8 +13,8 @@ interface Magazine {
   description: string;
   cover_image: string;     // absolute URL
   issue_number: string;
-  volume_number: number;
-  season_number: number;
+  year: number;          // Replaced volume_number
+  season: string;        // Replaced season_number (values: 'Winter','Spring','Summer','Fall')
   pdf_file: string;
   is_published: boolean;
   page_images: string[];   // array of absolute URLs
@@ -70,18 +70,24 @@ export function LatestIssue() {
                   </span>
                   <span className="mx-2">•</span>
                   <BookOpen className="h-4 w-4" />
-                  <span>
-                    {latestMagazine
-                      ? `Season ${latestMagazine.season_number}, Vol. ${latestMagazine.volume_number}`
-                      : "Season • Volume"}
-                  </span>
+                <span className="inline-flex items-center">
+                  {latestMagazine ? (
+                    <>
+                      Year {latestMagazine.year}, 
+                      <Sun className="w-4 h-4 mx-1 text-amber-500" />
+                      {latestMagazine.season}
+                    </>
+                  ) : (
+                    "Year • Season"
+                  )}
+                </span>
                 </div>
 
                 <h2 className="font-secondary text-3xl md:text-4xl lg:text-5xl font-bold text-primary mb-4 leading-tight">
                   {latestMagazine
-                    ? `Current Issue · Season ${latestMagazine.season_number} - ${new Date(
+                    ? `Current Issue · Year ${latestMagazine.year - 2024} - ${new Date(
                         latestMagazine.publish_date
-                      ).getFullYear()} · Vol. ${latestMagazine.volume_number} – ${new Date(
+                      ).getFullYear()} · ${latestMagazine.season} – ${new Date(
                         latestMagazine.publish_date
                       ).toLocaleString("default", { month: "long" })}`
                     : "Loading Latest Issue..."}
@@ -204,7 +210,7 @@ export function LatestIssue() {
             {/* Right Column – Magazine Cover (40% width) */}
             <div className="lg:col-span-2 order-1 lg:order-2">
               <div className="relative max-w-md mx-auto lg:mx-0">
-                <div className="relative w-full aspect-[210/297] overflow-hidden transform transition-all duration-500 hover:shadow-xl hover:scale-[1.02] shadow-magazine-edge">
+                <div className="relative w-full aspect-[1275/1650] overflow-hidden transform transition-all duration-500 hover:shadow-xl hover:scale-[1.02] shadow-magazine-edge">
                   {latestMagazine ? (
                     <Image
                       src={latestMagazine.cover_image}
@@ -221,14 +227,17 @@ export function LatestIssue() {
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent"></div>
 
                   {/* Issue badge */}
-                  {latestMagazine && (
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                      <span className="text-primary font-primary text-xs font-medium">
-                        Vol. {latestMagazine.volume_number} –{" "}
-                        {formatPublishDate(latestMagazine.publish_date)}
-                      </span>
-                    </div>
-                  )}
+{/* Issue badge with enhanced hover effect */}
+{latestMagazine && (
+  <div className="absolute top-4 left-4 bg-gradient-to-r from-amber-50/80 to-yellow-50/80 px-3 py-1 rounded-full flex items-center shadow-sm backdrop-blur-[2px]
+                 border border-amber-200/50 transition-all duration-300 ease-in-out
+                 hover:from-amber-100 hover:to-yellow-100 hover:border-amber-300 hover:shadow-md hover:scale-[1.02]">
+    <Sun className="w-4 h-4 mr-1 text-amber-600 transition-colors duration-300 hover:text-amber-700" />
+    <span className="text-amber-800 font-primary text-xs font-bold">
+      Season {latestMagazine.season} – {formatPublishDate(latestMagazine.publish_date)}
+    </span>
+  </div>
+)}
 
                   {/* Magazine edge effect */}
                   <div className="absolute inset-0 border border-gray-200"></div>

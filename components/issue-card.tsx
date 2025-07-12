@@ -5,15 +5,15 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, BookOpen, Download, ArrowRight } from "lucide-react";
+import { Calendar, BookOpen, Download, ArrowRight, Sun } from "lucide-react";
 import FlipBookReader from "./FlipBookReader";
 
 export interface IssueCardProps {
   id: string;
   title: string;
   date: string;              // e.g. "May 2022"
-  volume: number;
-  edition: number;
+  year: number;          // Replaced volume_number
+  season: string;        // Replaced season_number (values: 'Winter','Spring','Summer','Fall')
   coverImage: string;
   tags?: string[];
   pageImages?: string[];     // array of absolute URLs for flipbook pages
@@ -24,8 +24,8 @@ export function IssueCard({
   id,
   title,
   date,
-  volume,
-  edition,
+  year,
+  season,
   coverImage,
   tags = [],
   pageImages = [],
@@ -53,7 +53,7 @@ export function IssueCard({
     <>
       <div className="bg-white overflow-hidden shadow-card border border-primary/5 transition-transform hover:shadow-soft hover:-translate-y-1">
         {/* Cover Image */}
-        <div className="relative w-full aspect-[210/297] overflow-hidden">
+        <div className="relative w-full aspect-[1275/1650] overflow-hidden">
           <Image
             src={coverImage || "/placeholder.svg"}
             alt={`${title} Cover`}
@@ -71,9 +71,11 @@ export function IssueCard({
             <span>{date}</span>
             <span className="mx-1">•</span>
             <BookOpen className="h-3 w-3" />
-            <span>
-              Volume {volume}, Edition {edition}
-            </span>
+<span className="inline-flex items-center font-medium">
+  Year {year - 2024}, 
+  <Sun className="w-4 h-4 mx-1 text-amber-500" />
+  <span>{season}</span>
+</span>
           </div>
 
           <h3 className="font-secondary text-xl font-bold text-primary mb-3 line-clamp-2">

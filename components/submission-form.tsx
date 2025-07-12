@@ -262,6 +262,7 @@ export function SubmissionForm() {
             type="text"
             value={formData.firstName}
             onChange={handleChange}
+            placeholder="Your first name"
             className={`w-full px-4 py-3 rounded-md border ${
               errors.firstName && touched.firstName
                 ? "border-red-500"
@@ -285,6 +286,7 @@ export function SubmissionForm() {
             type="text"
             value={formData.lastName}
             onChange={handleChange}
+            placeholder="Your last name"
             className={`w-full px-4 py-3 rounded-md border ${
               errors.lastName && touched.lastName
                 ? "border-red-500"
@@ -311,6 +313,7 @@ export function SubmissionForm() {
           type="email"
           value={formData.email}
           onChange={handleChange}
+          placeholder="your.email@example.com"
           className={`w-full px-4 py-3 rounded-md border ${
             errors.email && touched.email
               ? "border-red-500"
@@ -336,6 +339,7 @@ export function SubmissionForm() {
           type="text"
           value={formData.title}
           onChange={handleChange}
+          placeholder="Title of your submission"
           className={`w-full px-4 py-3 rounded-md border ${
             errors.title && touched.title
               ? "border-red-500"
@@ -378,11 +382,11 @@ export function SubmissionForm() {
                 name="file"
                 type="file"
                 className="sr-only"
-                accept=".pdf,.doc,.docx,.txt"
+                accept=".docx"
                 onChange={handleFileChange}
               />
             </label>
-            <p className="text-xs text-navy/60">PDF, DOC, DOCX, TXT up to 10MB</p>
+            <p className="text-xs text-navy/60">DOCX up to 10MB</p>
             {fileName && (
               <p className="text-sm font-medium text-navy mt-2 flex items-center justify-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-600" /> {fileName}
@@ -409,6 +413,7 @@ export function SubmissionForm() {
           rows={3}
           value={formData.bio}
           onChange={handleChange}
+          placeholder="Tell us about yourself in 10-100 words..."
           className={`w-full px-4 py-3 rounded-md border ${
             errors.bio && touched.bio
               ? "border-red-500"
@@ -439,6 +444,7 @@ export function SubmissionForm() {
           rows={3}
           value={formData.message}
           onChange={handleChange}
+          placeholder="Any additional links or comments..."
           className="w-full px-4 py-3 rounded-md border border-navy/20 focus:outline-none focus:ring-2 focus:ring-navy/30"
         />
       </div>

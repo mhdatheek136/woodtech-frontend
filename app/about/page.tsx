@@ -2,9 +2,10 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { AboutHero } from "@/components/about-hero"
 import { OurStory } from "@/components/our-story"
-import { MeetTheTeam } from "@/components/meet-the-team"
+// import { MeetTheTeam } from "@/components/meet-the-team"
 import { WhatWeValue } from "@/components/what-we-value"
 import { JoinTheJourney } from "@/components/join-the-journey"
+import { ContactUs } from "@/components/contact-us"
 
 export default function AboutPage() {
   return (
@@ -13,7 +14,7 @@ export default function AboutPage() {
       <main>
         <AboutHero />
         <OurStory />
-        <MeetTheTeam />
+        <ContactUs />
         <WhatWeValue />
         <JoinTheJourney />
       </main>

@@ -5,7 +5,7 @@ import type React from "react"
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Book, Feather, FileText, BookOpen, Bookmark, PenTool, Quote, ArrowRight, Star, Heart } from "lucide-react"
+import { Book, Feather, FileText, BookOpen, Bookmark, PenTool, Quote, ArrowRight, Star, Heart, Sun } from "lucide-react"
 import FlipBookReader from "./FlipBookReader"
 
 interface Magazine {
@@ -15,8 +15,8 @@ interface Magazine {
   description: string
   cover_image: string  // matches the API field
   issue_number: string
-  volume_number: number
-  season_number: number
+  year: number;          // Replaced volume_number
+  season: string;        // Replaced season_number (values: 'Winter','Spring','Summer','Fall')
   pdf_file: string
   is_published: boolean
   page_images: string[]
@@ -271,7 +271,7 @@ export function HeroSection() {
     <div className="bg-white/95 backdrop-blur-sm p-6 md:p-8 rounded-2xl transform transition-all duration-500 hover:shadow-xl hover:-translate-y-2 shadow-magazine-edge">
       <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
         {/* Magazine cover */}
-        <div className="relative w-full max-w-[240px] md:max-w-[280px] aspect-[210/297] overflow-hidden transform transition-transform duration-300 group-hover:scale-[1.02] shadow-magazine-inner">
+        <div className="relative w-full max-w-[240px] md:max-w-[280px] aspect-[1275/1650] overflow-hidden transform transition-transform duration-300 group-hover:scale-[1.02] shadow-magazine-inner">
           {latestMagazine ? (
             <Image
               src={latestMagazine.cover_image}
@@ -289,14 +289,12 @@ export function HeroSection() {
 
         {/* Issue details */}
         <div className="flex-1 text-center md:text-left">
-          <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-primary font-bold mb-4 shadow-sm">
-            {latestMagazine
-              ? `Latest Issue - ${new Date(latestMagazine.publish_date).toLocaleString("default", {
-                  month: "long",
-                  year: "numeric",
-                })}`
-              : "Loading..."}
-          </div>
+            <div className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 rounded-full text-sm font-primary font-bold mb-4 shadow-sm">
+              <Sun className="w-4 h-4 mr-2 text-amber-600" />
+              {latestMagazine
+                ? `Latest Issue - ${latestMagazine.season} ${latestMagazine.year}`
+                : "Loading..."}
+            </div>
           <h2 className="font-secondary text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4 leading-tight">
             {latestMagazine ? latestMagazine.title : "Loading..."}
           </h2>

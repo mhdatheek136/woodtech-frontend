@@ -7,10 +7,10 @@ export function IssueFilters() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showFilters, setShowFilters] = useState(false)
   const [selectedYear, setSelectedYear] = useState<string>("all")
-  const [selectedVolume, setSelectedVolume] = useState<string>("all")
+  const [selectedSeason, setSelectedSeason] = useState<string>("all")
 
-  const years = ["all", "2023", "2022", "2021", "2020"]
-  const volumes = ["all", "1", "2", "3", "4", "5"]
+  const years = ["all", "2025", "2024", "2023", "2022"]
+  const seasons = ["all", "Summer", "Fall", "Winter", "Spring"]
 
   return (
     <div className="mb-12">
@@ -53,15 +53,15 @@ export function IssueFilters() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-navy/70 mb-2 font-primary">Volume</label>
+            <label className="block text-sm font-medium text-navy/70 mb-2 font-primary">Season</label>
             <select
-              value={selectedVolume}
-              onChange={(e) => setSelectedVolume(e.target.value)}
+              value={selectedSeason}
+              onChange={(e) => setSelectedSeason(e.target.value)}
               className="w-full px-3 py-2 rounded-md border border-navy/20 focus:outline-none focus:ring-2 focus:ring-navy/30 font-primary"
             >
-              {volumes.map((volume) => (
-                <option key={volume} value={volume}>
-                  {volume === "all" ? "All Volumes" : `Volume ${volume}`}
+              {seasons.map((season) => (
+                <option key={season} value={season}>
+                  {season === "all" ? "All Seasons" : season}
                 </option>
               ))}
             </select>
