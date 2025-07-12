@@ -104,7 +104,7 @@ export function Footer() {
             <p className="text-white/60 text-sm mb-6 font-primary">Published by Woodland Publishing</p>
             <div className="flex space-x-4">
             <Link
-              href="https://instagram.com"
+              href="https://www.instagram.com/woodlandpublishinglk?igsh=MTJqMmk5enEybHZuOA== "
               className="text-white/60 hover:text-accent transition-colors"
               aria-label="Instagram"
             >
@@ -118,7 +118,7 @@ export function Footer() {
               <Twitter className="h-5 w-5" />
             </Link> */}
             <Link
-              href="https://tiktok.com"
+              href="https://www.tiktok.com/@woodland.publishi?_t=ZS-8xxidjvhmrP&_r=1"
               className="text-white/60 hover:text-accent transition-colors"
               aria-label="TikTok"
             >
@@ -127,7 +127,7 @@ export function Footer() {
               </svg>
             </Link>
             <Link
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/company/woodland-publishing/"
               className="text-white/60 hover:text-accent transition-colors"
               aria-label="LinkedIn"
             >
